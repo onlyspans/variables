@@ -1,4 +1,5 @@
 using Onlyspans.Variables.Api;
+using Onlyspans.Variables.Api.Endpoints;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,10 @@ var app = builder.Build();
 
 app.UseHealthz();
 app.UseGrpcServices();
+
+app.MapVariablesEndpoints();
+app.MapVariableSetsEndpoints();
+app.MapProjectVariableSetsEndpoints();
 
 app.MapGet("/", () => "Onlyspans.Variables.Api");
 

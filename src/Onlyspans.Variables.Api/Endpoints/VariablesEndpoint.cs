@@ -1,3 +1,4 @@
+using FluentValidation;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
 using Onlyspans.Variables.Api.Data.Records;
@@ -37,8 +38,15 @@ public static class VariablesEndpoint
         [FromRoute] Guid projectId,
         [FromBody] CreateVariableRequest request,
         [FromServices] ISender sender,
+        [FromServices] IValidator<CreateVariableRequest> validator,
         CancellationToken ct)
     {
+        var validationResult = await validator.ValidateAsync(request, ct);
+        if (!validationResult.IsValid)
+        {
+            return Results.ValidationProblem(validationResult.ToDictionary());
+        }
+
         var result = await sender.Send(new CreateVariable(projectId, request), ct);
         return Results.Created($"/api/variables/{result.Id}", result);
     }
@@ -47,8 +55,15 @@ public static class VariablesEndpoint
         [FromRoute] Guid id,
         [FromBody] UpdateVariableRequest request,
         [FromServices] ISender sender,
+        [FromServices] IValidator<UpdateVariableRequest> validator,
         CancellationToken ct)
     {
+        var validationResult = await validator.ValidateAsync(request, ct);
+        if (!validationResult.IsValid)
+        {
+            return Results.ValidationProblem(validationResult.ToDictionary());
+        }
+
         var result = await sender.Send(new UpdateVariable(id, request), ct);
         return Results.Ok(result);
     }

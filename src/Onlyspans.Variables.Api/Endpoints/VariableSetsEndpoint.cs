@@ -1,3 +1,4 @@
+using FluentValidation;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
 using Onlyspans.Variables.Api.Data.Records;
@@ -42,8 +43,15 @@ public static class VariableSetsEndpoint
     private static async Task<IResult> CreateVariableSet(
         [FromBody] CreateVariableSetRequest request,
         [FromServices] ISender sender,
+        [FromServices] IValidator<CreateVariableSetRequest> validator,
         CancellationToken ct)
     {
+        var validationResult = await validator.ValidateAsync(request, ct);
+        if (!validationResult.IsValid)
+        {
+            return Results.ValidationProblem(validationResult.ToDictionary());
+        }
+
         var result = await sender.Send(new CreateVariableSet(request), ct);
         return Results.Created($"/api/variable-sets/{result.Id}", result);
     }
@@ -52,8 +60,15 @@ public static class VariableSetsEndpoint
         [FromRoute] Guid id,
         [FromBody] UpdateVariableSetRequest request,
         [FromServices] ISender sender,
+        [FromServices] IValidator<UpdateVariableSetRequest> validator,
         CancellationToken ct)
     {
+        var validationResult = await validator.ValidateAsync(request, ct);
+        if (!validationResult.IsValid)
+        {
+            return Results.ValidationProblem(validationResult.ToDictionary());
+        }
+
         var result = await sender.Send(new UpdateVariableSet(id, request), ct);
         return Results.Ok(result);
     }
@@ -71,8 +86,15 @@ public static class VariableSetsEndpoint
         [FromRoute] Guid id,
         [FromBody] CreateVariableRequest request,
         [FromServices] ISender sender,
+        [FromServices] IValidator<CreateVariableRequest> validator,
         CancellationToken ct)
     {
+        var validationResult = await validator.ValidateAsync(request, ct);
+        if (!validationResult.IsValid)
+        {
+            return Results.ValidationProblem(validationResult.ToDictionary());
+        }
+
         var result = await sender.Send(new AddVariableToSet(id, request), ct);
         return Results.Created($"/api/variables/{result.Id}", result);
     }

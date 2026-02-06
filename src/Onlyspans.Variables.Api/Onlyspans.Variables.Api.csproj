@@ -12,6 +12,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" PrivateAssets="all" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.67.0" />
+    <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.67.0" />
     <PackageReference Include="Grpc.Tools" Version="2.67.0" PrivateAssets="all" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
@@ -19,6 +20,10 @@
     <PackageReference Include="Mediator.Abstractions" Version="2.1.7" />
     <PackageReference Include="Mediator.SourceGenerator" Version="2.1.7" OutputItemType="Analyzer" />
     <PackageReference Include="Strongly.Options" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="gRPC/Protos/variables.proto" GrpcServices="Server" />
   </ItemGroup>
 
 </Project>

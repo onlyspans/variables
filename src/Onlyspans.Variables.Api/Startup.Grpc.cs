@@ -2,9 +2,15 @@ namespace Onlyspans.Variables.Api;
 
 public static partial class Startup
 {
-    public static IServiceCollection AddGrpcServices(this IServiceCollection services)
+    public static IServiceCollection AddGrpcServices(this IServiceCollection services, IHostEnvironment environment)
     {
         services.AddGrpc();
+
+        // Enable gRPC reflection in development for testing with grpcurl
+        if (environment.IsDevelopment())
+        {
+            services.AddGrpcReflection();
+        }
 
         // Register gRPC clients for external service validation
         // TODO: Replace stub implementations with actual gRPC clients when services are available

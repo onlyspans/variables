@@ -8,7 +8,7 @@ builder.Host.AddSerilog();
 
 builder.Services
     .AddDatabase(builder.Configuration)
-    .AddGrpcServices()
+    .AddGrpcServices(builder.Environment)
     .AddFluentValidation()
     .AddHealthz(builder.Configuration)
     .AddMediatorServices();

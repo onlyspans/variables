@@ -1,0 +1,62 @@
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:16
+    container_name: variables-db
+    environment:
+      POSTGRES_DB: variables
+      POSTGRES_USER: variables
+      POSTGRES_PASSWORD: variables
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U variables"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - db
+      - all
+    networks:
+      - variables-network
+
+  # Variables API
+  api:
+    build:
+      context: .
+      dockerfile: src/Onlyspans.Variables.Api/Dockerfile
+    container_name: variables-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: "Server=db;Port=5432;Database=variables;User Id=variables;Password=variables;Include Error Detail=true"
+      Serilog__MinimumLevel: "Debug"
+      # gRPC client URLs (stub for now)
+      GrpcClients__ProjectsServiceUrl: "http://projects:8080"
+      GrpcClients__TargetsPlaneServiceUrl: "http://targets-plane:8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - api
+      - all
+    networks:
+      - variables-network
+
+volumes:
+  postgres-data:
+    name: variables-postgres-data
+
+networks:
+  variables-network:
+    name: variables-network
+    driver: bridge

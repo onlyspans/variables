@@ -1,9 +1,9 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy solution file
-COPY Onlyspans.Variables.sln ./
+COPY Onlyspans.Variables.slnx ./
 
 # Copy project file
 COPY src/Onlyspans.Variables.Api/Onlyspans.Variables.Api.csproj src/Onlyspans.Variables.Api/
@@ -23,7 +23,7 @@ FROM build AS publish
 RUN dotnet publish -c Release -o /app/publish --no-restore /p:UseAppHost=false
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Install curl for health checks

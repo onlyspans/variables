@@ -1,4 +1,5 @@
 using Mediator;
+using Microsoft.EntityFrameworkCore;
 using Onlyspans.Variables.Api.Data.Contexts;
 using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Data.Records;
@@ -16,6 +17,14 @@ public sealed class AddVariableToSetHandler(
     {
         logger.LogInformation("Adding variable {Key} to variable set {SetId}",
             command.Request.Key, command.SetId);
+
+        // Validate variable set exists
+        var setExists = await db.VariableSets.AnyAsync(vs => vs.Id == command.SetId, cancellationToken);
+        if (!setExists)
+        {
+            logger.LogWarning("Variable set {SetId} does not exist", command.SetId);
+            throw new InvalidOperationException($"Variable set {command.SetId} does not exist");
+        }
 
         var now = DateTime.UtcNow;
         var variable = new Variable

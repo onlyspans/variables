@@ -8,12 +8,18 @@ public sealed class UpdateVariableRequestValidator : AbstractValidator<UpdateVar
 {
     public UpdateVariableRequestValidator(ITargetsPlaneClient targetsPlaneClient)
     {
+        // Key is optional for updates (null means "don't change"), but if provided it cannot be empty
+        RuleFor(x => x.Key)
+            .Must(key => key != "")
+            .WithMessage("Variable key cannot be empty")
+            .When(x => x.Key != null);
+
         RuleFor(x => x.Key)
             .MaximumLength(256)
             .WithMessage("Variable key must not exceed 256 characters")
             .Matches("^[a-zA-Z0-9_.-]+$")
             .WithMessage("Variable key must contain only alphanumeric characters, underscores, dots, and hyphens")
-            .When(x => !string.IsNullOrEmpty(x.Key));
+            .When(x => !string.IsNullOrWhiteSpace(x.Key));
 
         // Value can be null to indicate no change, but if provided it should not be null
         // This is a partial update, so all fields are optional

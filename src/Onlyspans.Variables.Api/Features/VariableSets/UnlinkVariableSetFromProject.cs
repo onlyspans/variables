@@ -22,7 +22,8 @@ public sealed class UnlinkVariableSetFromProjectHandler(
 
         if (link is null)
         {
-            logger.LogWarning("Link between project {ProjectId} and set {SetId} not found",
+            // Idempotent behavior: if the link doesn't exist, the desired state is already achieved
+            logger.LogInformation("Link between project {ProjectId} and set {SetId} not found (idempotent operation)",
                 command.ProjectId, command.SetId);
             return Unit.Value;
         }

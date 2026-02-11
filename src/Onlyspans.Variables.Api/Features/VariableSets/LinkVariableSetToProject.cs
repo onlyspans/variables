@@ -42,7 +42,7 @@ public sealed class LinkVariableSetToProjectHandler(
 
         if (existingLink is not null)
         {
-            logger.LogWarning("Link between project {ProjectId} and set {SetId} already exists",
+            logger.LogInformation("Link between project {ProjectId} and set {SetId} already exists, returning successfully",
                 command.ProjectId, command.SetId);
             return Unit.Value;
         }

@@ -20,7 +20,9 @@ public sealed class CreateVariableRequestValidator : AbstractValidator<CreateVar
 
         RuleFor(x => x.Value)
             .NotNull()
-            .WithMessage("Variable value is required");
+            .WithMessage("Variable value is required")
+            .NotEmpty()
+            .WithMessage("Variable value cannot be empty");
 
         RuleFor(x => x.EnvironmentId)
             .MustAsync(async (environmentId, ct) =>

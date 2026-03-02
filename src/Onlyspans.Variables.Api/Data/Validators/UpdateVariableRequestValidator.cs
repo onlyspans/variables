@@ -1,12 +1,11 @@
 using FluentValidation;
-using Onlyspans.Variables.Api.Abstractions.Services;
 using Onlyspans.Variables.Api.Data.Records;
 
 namespace Onlyspans.Variables.Api.Data.Validators;
 
 public sealed class UpdateVariableRequestValidator : AbstractValidator<UpdateVariableRequest>
 {
-    public UpdateVariableRequestValidator(ITargetsPlaneClient targetsPlaneClient)
+    public UpdateVariableRequestValidator()
     {
         // Key is optional for updates (null means "don't change"), but if provided it cannot be empty
         RuleFor(x => x.Key)
@@ -23,17 +22,6 @@ public sealed class UpdateVariableRequestValidator : AbstractValidator<UpdateVar
 
         // Value can be null to indicate no change, but if provided it should not be null
         // This is a partial update, so all fields are optional
-
-        RuleFor(x => x.EnvironmentId)
-            .MustAsync(async (environmentId, ct) =>
-            {
-                if (!environmentId.HasValue)
-                    return true; // Unscoped variables are allowed
-
-                return await targetsPlaneClient.EnvironmentExistsAsync(environmentId.Value, ct);
-            })
-            .WithMessage("Environment does not exist")
-            .When(x => x.EnvironmentId.HasValue);
 
         // At least one field must be provided for an update
         RuleFor(x => x)

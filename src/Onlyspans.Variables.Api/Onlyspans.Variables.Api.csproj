@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <Protobuf Include="gRPC/Protos/variables.proto" GrpcServices="Server" />
+    <Protobuf Include="gRPC/Protos/projects.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

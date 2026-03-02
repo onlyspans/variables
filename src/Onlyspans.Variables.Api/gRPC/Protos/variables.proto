@@ -10,7 +10,6 @@ service VariablesService {
 
   // Validation endpoints (internal use)
   rpc ValidateProjectExists(ValidateProjectInput) returns (ValidationResult);
-  rpc ValidateEnvironmentExists(ValidateEnvironmentInput) returns (ValidationResult);
 }
 
 message GetResolvedVariablesInput {
@@ -49,10 +48,6 @@ message InternalError {
 
 message ValidateProjectInput {
   string project_id = 1;
-}
-
-message ValidateEnvironmentInput {
-  string environment_id = 1;
 }
 
 message ValidationResult {

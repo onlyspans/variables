@@ -6,9 +6,7 @@ namespace Onlyspans.Variables.Api.Data.Validators;
 
 public sealed class CreateVariableRequestValidator : AbstractValidator<CreateVariableRequest>
 {
-    public CreateVariableRequestValidator(
-        ITargetsPlaneClient targetsPlaneClient,
-        IProjectsClient projectsClient)
+    public CreateVariableRequestValidator(IProjectsClient projectsClient)
     {
         RuleFor(x => x.Key)
             .NotEmpty()
@@ -23,17 +21,6 @@ public sealed class CreateVariableRequestValidator : AbstractValidator<CreateVar
             .WithMessage("Variable value is required")
             .NotEmpty()
             .WithMessage("Variable value cannot be empty");
-
-        RuleFor(x => x.EnvironmentId)
-            .MustAsync(async (environmentId, ct) =>
-            {
-                if (!environmentId.HasValue)
-                    return true; // Unscoped variables are allowed
-
-                return await targetsPlaneClient.EnvironmentExistsAsync(environmentId.Value, ct);
-            })
-            .WithMessage("Environment does not exist")
-            .When(x => x.EnvironmentId.HasValue);
 
         // Note: ProjectId validation is done at the endpoint level since it comes from the route
         // VariableSetId validation would require checking against the database

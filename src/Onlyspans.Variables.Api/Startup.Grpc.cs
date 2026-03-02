@@ -2,20 +2,24 @@ namespace Onlyspans.Variables.Api;
 
 public static partial class Startup
 {
-    public static IServiceCollection AddGrpcServices(this IServiceCollection services, IHostEnvironment environment)
+    public static IServiceCollection AddGrpcServices(
+        this IServiceCollection services,
+        IHostEnvironment environment,
+        Data.Options.GrpcClientsOptions grpcClientsOptions)
     {
         services.AddGrpc();
 
-        // Enable gRPC reflection in development for testing with grpcurl
         if (environment.IsDevelopment())
         {
             services.AddGrpcReflection();
         }
 
-        // Register gRPC clients for external service validation
-        // TODO: Replace stub implementations with actual gRPC clients when services are available
-        services.AddSingleton<Abstractions.Services.IProjectsClient, Services.StubProjectsClient>();
-        services.AddSingleton<Abstractions.Services.ITargetsPlaneClient, Services.StubTargetsPlaneClient>();
+        services.AddGrpcClient<Projects.V1.ProjectsService.ProjectsServiceClient>(options =>
+        {
+            options.Address = new Uri(grpcClientsOptions.ProjectsServiceUrl);
+        });
+
+        services.AddTransient<Abstractions.Services.IProjectsClient, Services.GrpcProjectsClient>();
 
         return services;
     }

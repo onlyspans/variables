@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Onlyspans.Variables.Api.Abstractions.Services;
 using Onlyspans.Variables.Api.Data.Contexts;
+using Projects.V1;
 using Testcontainers.PostgreSql;
 
 namespace Onlyspans.Variables.Api.Tests.Endpoints;
@@ -27,7 +28,6 @@ public class IntegrationTestBase : IAsyncLifetime, IDisposable
     protected ApplicationDbContext DbContext { get; private set; } = null!;
 
     protected Mock<IProjectsClient> MockProjectsClient { get; } = new();
-    protected Mock<ITargetsPlaneClient> MockTargetsPlaneClient { get; } = new();
 
     public async Task InitializeAsync()
     {
@@ -45,10 +45,6 @@ public class IntegrationTestBase : IAsyncLifetime, IDisposable
         // Setup mock clients to return true by default
         MockProjectsClient
             .Setup(x => x.ProjectExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        MockTargetsPlaneClient
-            .Setup(x => x.EnvironmentExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Create WebApplicationFactory
@@ -85,11 +81,11 @@ public class IntegrationTestBase : IAsyncLifetime, IDisposable
                         options.UseNpgsql(connectionString);
                     });
 
-                    // Replace gRPC clients with mocks
+                    // Replace IProjectsClient with mock to prevent real gRPC calls
                     services.RemoveAll<IProjectsClient>();
-                    services.RemoveAll<ITargetsPlaneClient>();
                     services.AddSingleton(MockProjectsClient.Object);
-                    services.AddSingleton(MockTargetsPlaneClient.Object);
+                    // Remove the generated gRPC client to prevent connection attempts to localhost:4001
+                    services.RemoveAll<ProjectsService.ProjectsServiceClient>();
                 });
             });
 

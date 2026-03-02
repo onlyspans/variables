@@ -9,7 +9,6 @@ namespace Onlyspans.Variables.Api.gRPC.Services;
 public sealed class VariablesGrpcService(
     ISender sender,
     IProjectsClient projectsClient,
-    ITargetsPlaneClient targetsPlaneClient,
     ILogger<VariablesGrpcService> logger)
     : VariablesService.VariablesServiceBase
 {
@@ -139,39 +138,4 @@ public sealed class VariablesGrpcService(
         }
     }
 
-    public override async Task<ValidationResult> ValidateEnvironmentExists(
-        ValidateEnvironmentInput request,
-        ServerCallContext context)
-    {
-        logger.LogInformation("ValidateEnvironmentExists gRPC call for environment {EnvironmentId}", request.EnvironmentId);
-
-        try
-        {
-            if (!Guid.TryParse(request.EnvironmentId, out var environmentId))
-            {
-                return new ValidationResult
-                {
-                    Exists = false,
-                    ErrorMessage = "Invalid environment ID format"
-                };
-            }
-
-            var exists = await targetsPlaneClient.EnvironmentExistsAsync(environmentId, context.CancellationToken);
-
-            return new ValidationResult
-            {
-                Exists = exists,
-                ErrorMessage = exists ? string.Empty : "Environment not found"
-            };
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error validating environment existence");
-            return new ValidationResult
-            {
-                Exists = false,
-                ErrorMessage = $"Validation error: {ex.Message}"
-            };
-        }
-    }
 }

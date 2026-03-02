@@ -7,9 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.AddSerilog();
 
+var grpcClientsOptions = builder.Configuration
+    .GetSection(Onlyspans.Variables.Api.Data.Options.GrpcClientsOptions.SectionName)
+    .Get<Onlyspans.Variables.Api.Data.Options.GrpcClientsOptions>()!;
+
 builder.Services
     .AddDatabase(builder.Configuration)
-    .AddGrpcServices(builder.Environment)
+    .AddGrpcServices(builder.Environment, grpcClientsOptions)
     .AddFluentValidation()
     .AddHealthz(builder.Configuration)
     .AddMediatorServices();

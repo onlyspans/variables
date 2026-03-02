@@ -1,6 +1,5 @@
 using Grpc.Core;
 using Mediator;
-using Onlyspans.Variables.Api.Abstractions.Services;
 using Onlyspans.Variables.Api.Data.Exceptions;
 using Variables.Communication;
 
@@ -8,7 +7,6 @@ namespace Onlyspans.Variables.Api.gRPC.Services;
 
 public sealed class VariablesGrpcService(
     ISender sender,
-    IProjectsClient projectsClient,
     ILogger<VariablesGrpcService> logger)
     : VariablesService.VariablesServiceBase
 {
@@ -98,42 +96,6 @@ public sealed class VariablesGrpcService(
                     Message = ex.Message,
                     Trace = ex.StackTrace ?? string.Empty
                 }
-            };
-        }
-    }
-
-    public override async Task<ValidationResult> ValidateProjectExists(
-        ValidateProjectInput request,
-        ServerCallContext context)
-    {
-        logger.LogInformation("ValidateProjectExists gRPC call for project {ProjectId}", request.ProjectId);
-
-        try
-        {
-            if (!Guid.TryParse(request.ProjectId, out var projectId))
-            {
-                return new ValidationResult
-                {
-                    Exists = false,
-                    ErrorMessage = "Invalid project ID format"
-                };
-            }
-
-            var exists = await projectsClient.ProjectExistsAsync(projectId, context.CancellationToken);
-
-            return new ValidationResult
-            {
-                Exists = exists,
-                ErrorMessage = exists ? string.Empty : "Project not found"
-            };
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error validating project existence");
-            return new ValidationResult
-            {
-                Exists = false,
-                ErrorMessage = $"Validation error: {ex.Message}"
             };
         }
     }

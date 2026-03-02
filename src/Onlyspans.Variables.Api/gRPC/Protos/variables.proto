@@ -7,9 +7,6 @@ option csharp_namespace = "Variables.Communication";
 service VariablesService {
   // Called by snapper to get resolved variables for snapshot
   rpc GetResolvedVariables(GetResolvedVariablesInput) returns (GetResolvedVariablesResult);
-
-  // Validation endpoints (internal use)
-  rpc ValidateProjectExists(ValidateProjectInput) returns (ValidationResult);
 }
 
 message GetResolvedVariablesInput {
@@ -46,11 +43,3 @@ message InternalError {
   string trace = 2;
 }
 
-message ValidateProjectInput {
-  string project_id = 1;
-}
-
-message ValidationResult {
-  bool exists = 1;
-  string error_message = 2;
-}

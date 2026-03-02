@@ -1,6 +1,7 @@
 using FluentValidation;
 using Mediator;
 using Microsoft.AspNetCore.Mvc;
+using Onlyspans.Variables.Api.Abstractions.Services;
 using Onlyspans.Variables.Api.Data.Records;
 using Onlyspans.Variables.Api.Features.Variables;
 
@@ -39,8 +40,12 @@ public static class VariablesEndpoint
         [FromBody] CreateVariableRequest request,
         [FromServices] ISender sender,
         [FromServices] IValidator<CreateVariableRequest> validator,
+        [FromServices] IProjectsClient projectsClient,
         CancellationToken ct)
     {
+        if (!await projectsClient.ProjectExistsAsync(projectId, ct))
+            return Results.NotFound($"Project {projectId} not found");
+
         var validationResult = await validator.ValidateAsync(request, ct);
         if (!validationResult.IsValid)
         {

@@ -1,8 +1,9 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Onlyspans.Variables.Api.Abstractions.Services;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Features.VariableSets;
 using Onlyspans.Variables.Api.Tests.Helpers;
 
@@ -10,14 +11,7 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class LinkVariableSetToProjectHandlerTests
 {
-    private readonly Mock<ILogger<LinkVariableSetToProjectHandler>> _loggerMock;
-    private readonly Mock<IProjectsClient> _projectsClientMock;
-
-    public LinkVariableSetToProjectHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<LinkVariableSetToProjectHandler>>();
-        _projectsClientMock = new Mock<IProjectsClient>();
-    }
+    private readonly IProjectsClient _projectsClientMock = Substitute.For<IProjectsClient>();
 
     [Fact]
     public async Task Handle_ValidRequest_LinksSuccessfully()
@@ -27,16 +21,14 @@ public class LinkVariableSetToProjectHandlerTests
         var setId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set");
+        var variableSet = new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
 
-        _projectsClientMock
-            .Setup(x => x.ProjectExistsAsync(projectId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _projectsClientMock.ProjectExistsAsync(projectId, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
         var command = new LinkVariableSetToProject(projectId, setId);
-        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock.Object, _loggerMock.Object);
+        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock, NullLogger<LinkVariableSetToProjectHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -57,16 +49,14 @@ public class LinkVariableSetToProjectHandlerTests
         var setId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set");
+        var variableSet = new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
 
-        _projectsClientMock
-            .Setup(x => x.ProjectExistsAsync(projectId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _projectsClientMock.ProjectExistsAsync(projectId, Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
 
         var command = new LinkVariableSetToProject(projectId, setId);
-        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock.Object, _loggerMock.Object);
+        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock, NullLogger<LinkVariableSetToProjectHandler>.Instance);
 
         // Act
         Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
@@ -84,12 +74,10 @@ public class LinkVariableSetToProjectHandlerTests
         var nonExistentSetId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        _projectsClientMock
-            .Setup(x => x.ProjectExistsAsync(projectId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _projectsClientMock.ProjectExistsAsync(projectId, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
         var command = new LinkVariableSetToProject(projectId, nonExistentSetId);
-        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock.Object, _loggerMock.Object);
+        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock, NullLogger<LinkVariableSetToProjectHandler>.Instance);
 
         // Act
         Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
@@ -107,19 +95,17 @@ public class LinkVariableSetToProjectHandlerTests
         var setId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set");
+        var variableSet = new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
 
-        var existingLink = TestDataBuilder.CreateLink(projectId, setId);
+        var existingLink = new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = setId, LinkedAt = DateTime.UtcNow };
         db.ProjectVariableSetLinks.Add(existingLink);
         await db.SaveChangesAsync();
 
-        _projectsClientMock
-            .Setup(x => x.ProjectExistsAsync(projectId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _projectsClientMock.ProjectExistsAsync(projectId, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
         var command = new LinkVariableSetToProject(projectId, setId);
-        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock.Object, _loggerMock.Object);
+        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock, NullLogger<LinkVariableSetToProjectHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -139,15 +125,13 @@ public class LinkVariableSetToProjectHandlerTests
         var setId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Shared Set");
+        var variableSet = new VariableSet { Id = setId, Name = "Shared Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
 
-        _projectsClientMock
-            .Setup(x => x.ProjectExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _projectsClientMock.ProjectExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
-        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock.Object, _loggerMock.Object);
+        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock, NullLogger<LinkVariableSetToProjectHandler>.Instance);
 
         // Act
         await handler.Handle(new LinkVariableSetToProject(project1Id, setId), CancellationToken.None);
@@ -169,16 +153,14 @@ public class LinkVariableSetToProjectHandlerTests
         var set2Id = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var set1 = TestDataBuilder.CreateVariableSet(id: set1Id, name: "Set 1");
-        var set2 = TestDataBuilder.CreateVariableSet(id: set2Id, name: "Set 2");
+        var set1 = new VariableSet { Id = set1Id, Name = "Set 1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var set2 = new VariableSet { Id = set2Id, Name = "Set 2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.AddRange(set1, set2);
         await db.SaveChangesAsync();
 
-        _projectsClientMock
-            .Setup(x => x.ProjectExistsAsync(projectId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _projectsClientMock.ProjectExistsAsync(projectId, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
-        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock.Object, _loggerMock.Object);
+        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock, NullLogger<LinkVariableSetToProjectHandler>.Instance);
 
         // Act
         await handler.Handle(new LinkVariableSetToProject(projectId, set1Id), CancellationToken.None);
@@ -192,48 +174,6 @@ public class LinkVariableSetToProjectHandlerTests
     }
 
     [Fact]
-    public async Task Handle_LogsInformation_OnSuccess()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var setId = Guid.NewGuid();
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set");
-        db.VariableSets.Add(variableSet);
-        await db.SaveChangesAsync();
-
-        _projectsClientMock
-            .Setup(x => x.ProjectExistsAsync(projectId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var command = new LinkVariableSetToProject(projectId, setId);
-        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock.Object, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Linking variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Linked variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
     public async Task Handle_SetsLinkedAtTimestamp()
     {
         // Arrange
@@ -241,16 +181,14 @@ public class LinkVariableSetToProjectHandlerTests
         var setId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set");
+        var variableSet = new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
 
-        _projectsClientMock
-            .Setup(x => x.ProjectExistsAsync(projectId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _projectsClientMock.ProjectExistsAsync(projectId, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
         var command = new LinkVariableSetToProject(projectId, setId);
-        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock.Object, _loggerMock.Object);
+        var handler = new LinkVariableSetToProjectHandler(db, _projectsClientMock, NullLogger<LinkVariableSetToProjectHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);

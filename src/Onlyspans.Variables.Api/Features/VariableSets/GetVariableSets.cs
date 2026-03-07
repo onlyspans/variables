@@ -16,14 +16,9 @@ public sealed class GetVariableSetsHandler(
     {
         logger.LogInformation("Getting all variable sets");
 
-        var variableSets = await db.VariableSets.ToListAsync(cancellationToken);
-
-        return variableSets.Select(vs => new VariableSetResponse(
-            vs.Id,
-            vs.Name,
-            vs.Description,
-            vs.CreatedAt,
-            vs.UpdatedAt
-        )).ToList();
+        return await db
+            .VariableSets
+            .Select(x => new VariableSetResponse(x.Id, x.Name, x.Description, x.CreatedAt, x.UpdatedAt))
+            .ToListAsync(cancellationToken);
     }
 }

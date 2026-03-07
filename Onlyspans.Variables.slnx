@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/sln/">
+    <File Path="docker-compose.yml" />
+  </Folder>
   <Folder Name="/src/" Path="/src/">
     <Project Path="src\Onlyspans.Variables.Api\Onlyspans.Variables.Api.csproj" />
   </Folder>

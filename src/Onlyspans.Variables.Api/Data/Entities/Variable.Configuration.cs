@@ -13,20 +13,22 @@ public class VariableConfiguration : IEntityTypeConfiguration<Variable>
             .IsRequired()
             .HasMaxLength(256);
 
-        builder.Property(v => v.Value)
+        builder
+            .Property(v => v.Value)
             .IsRequired();
 
         // Indexes for common queries
-        builder.HasIndex(v => v.ProjectId);
-        builder.HasIndex(v => v.VariableSetId);
-        builder.HasIndex(v => v.EnvironmentId);
-        builder.HasIndex(v => new { v.ProjectId, v.Key, v.EnvironmentId });
-        builder.HasIndex(v => new { v.VariableSetId, v.Key, v.EnvironmentId });
+        builder.HasIndex(x => x.ProjectId);
+        builder.HasIndex(x => x.VariableSetId);
+        builder.HasIndex(x => x.EnvironmentId);
+        builder.HasIndex(x => new { x.ProjectId, x.Key, x.EnvironmentId });
+        builder.HasIndex(x => new { x.VariableSetId, x.Key, x.EnvironmentId });
 
         // Relationship to VariableSet
-        builder.HasOne(v => v.VariableSet)
-            .WithMany(vs => vs.Variables)
-            .HasForeignKey(v => v.VariableSetId)
+        builder
+            .HasOne(x => x.VariableSet)
+            .WithMany(x => x.Variables)
+            .HasForeignKey(x => x.VariableSetId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

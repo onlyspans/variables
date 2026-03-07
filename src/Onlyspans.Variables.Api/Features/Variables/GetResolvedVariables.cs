@@ -51,20 +51,17 @@ public sealed class GetResolvedVariablesHandler(
         {
             var key = CreateKey(sv.Variable.Key, sv.Variable.EnvironmentId);
 
-            if (resolved.ContainsKey(key))
+            if (resolved.TryGetValue(key, out var existing))
             {
                 // Conflict: multiple variable sets define the same key+scope
-                var existing = resolved[key];
-                if (existing.Source != "project")
-                {
-                    logger.LogWarning(
-                        "Conflict detected for variable key {Key}: sources {Source1}, {Source2}",
-                        sv.Variable.Key, existing.Source, sv.SetName);
+                if (existing.Source == "project") continue;
+                logger.LogWarning(
+                    "Conflict detected for variable key {Key}: sources {Source1}, {Source2}",
+                    sv.Variable.Key, existing.Source, sv.SetName);
 
-                    throw new VariableConflictException(
-                        sv.Variable.Key,
-                        new List<string> { existing.Source, sv.SetName });
-                }
+                throw new VariableConflictException(
+                    sv.Variable.Key,
+                    [existing.Source, sv.SetName]);
             }
             else
             {

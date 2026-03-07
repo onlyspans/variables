@@ -16,33 +16,18 @@ public sealed class GetVariableSetHandler(
     {
         logger.LogInformation("Getting variable set {VariableSetId} with variables", query.Id);
 
-        var variableSet = await db.VariableSets
-            .Include(vs => vs.Variables)
-            .FirstOrDefaultAsync(vs => vs.Id == query.Id, cancellationToken);
+        var variableSet = await db
+            .VariableSets
+            .Where(x => x.Id == query.Id)
+            .Select(x => new VariableSetDetailResponse(
+                x.Id, x.Name, x.Description,
+                x.Variables.Select(v => new VariableResponse(v.Id, v.Key, v.Value, v.EnvironmentId, v.ProjectId, v.VariableSetId, v.CreatedAt, v.UpdatedAt)).ToList(),
+                x.CreatedAt, x.UpdatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (variableSet is null)
-        {
             throw new InvalidOperationException($"Variable set {query.Id} not found");
-        }
 
-        var variables = variableSet.Variables.Select(v => new VariableResponse(
-            v.Id,
-            v.Key,
-            v.Value,
-            v.EnvironmentId,
-            v.ProjectId,
-            v.VariableSetId,
-            v.CreatedAt,
-            v.UpdatedAt
-        )).ToList();
-
-        return new VariableSetDetailResponse(
-            variableSet.Id,
-            variableSet.Name,
-            variableSet.Description,
-            variables,
-            variableSet.CreatedAt,
-            variableSet.UpdatedAt
-        );
+        return variableSet;
     }
 }

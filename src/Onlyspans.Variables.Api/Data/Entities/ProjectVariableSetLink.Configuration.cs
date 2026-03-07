@@ -7,14 +7,14 @@ public class ProjectVariableSetLinkConfiguration : IEntityTypeConfiguration<Proj
 {
     public void Configure(EntityTypeBuilder<ProjectVariableSetLink> builder)
     {
-        builder.HasKey(l => new { l.ProjectId, l.VariableSetId });
+        builder.HasKey(x => new { x.ProjectId, x.VariableSetId });
 
-        builder.HasIndex(l => l.ProjectId);
-        builder.HasIndex(l => l.VariableSetId);
+        builder.HasIndex(x => x.ProjectId);
+        builder.HasIndex(x => x.VariableSetId);
 
-        builder.HasOne(l => l.VariableSet)
+        builder.HasOne(x => x.VariableSet)
             .WithMany()
-            .HasForeignKey(l => l.VariableSetId)
+            .HasForeignKey(x => x.VariableSetId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

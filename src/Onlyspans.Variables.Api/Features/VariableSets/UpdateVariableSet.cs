@@ -16,23 +16,18 @@ public sealed class UpdateVariableSetHandler(
     {
         logger.LogInformation("Updating variable set {VariableSetId}", command.Id);
 
-        var variableSet = await db.VariableSets
+        var variableSet = await db
+            .VariableSets
             .FirstOrDefaultAsync(vs => vs.Id == command.Id, cancellationToken);
 
         if (variableSet is null)
-        {
             throw new InvalidOperationException($"Variable set {command.Id} not found");
-        }
 
         if (command.Request.Name is not null)
-        {
             variableSet.Name = command.Request.Name;
-        }
 
         if (command.Request.Description is not null)
-        {
             variableSet.Description = command.Request.Description;
-        }
 
         variableSet.UpdatedAt = DateTime.UtcNow;
 

@@ -28,8 +28,7 @@ public sealed class VariablesGrpcService(
                 {
                     InternalError = new InternalError
                     {
-                        Message = "Invalid project ID format",
-                        Trace = string.Empty
+                        Message = "Invalid project ID format"
                     }
                 };
             }
@@ -41,8 +40,7 @@ public sealed class VariablesGrpcService(
                 {
                     InternalError = new InternalError
                     {
-                        Message = "Invalid environment ID format",
-                        Trace = string.Empty
+                        Message = "Invalid environment ID format"
                     }
                 };
             }
@@ -93,8 +91,7 @@ public sealed class VariablesGrpcService(
             {
                 InternalError = new InternalError
                 {
-                    Message = ex.Message,
-                    Trace = ex.StackTrace ?? string.Empty
+                    Message = ex.Message
                 }
             };
         }

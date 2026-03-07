@@ -16,7 +16,8 @@ public sealed class UnlinkVariableSetFromProjectHandler(
         logger.LogInformation("Unlinking variable set {SetId} from project {ProjectId}",
             command.SetId, command.ProjectId);
 
-        var link = await db.ProjectVariableSetLinks
+        var link = await db
+            .ProjectVariableSetLinks
             .FirstOrDefaultAsync(l => l.ProjectId == command.ProjectId && l.VariableSetId == command.SetId,
                 cancellationToken);
 

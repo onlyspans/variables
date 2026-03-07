@@ -16,19 +16,10 @@ public sealed class GetProjectVariablesHandler(
     {
         logger.LogInformation("Getting direct project variables for project {ProjectId}", query.ProjectId);
 
-        var variables = await db.Variables
+        return await db
+            .Variables
             .Where(v => v.ProjectId == query.ProjectId)
+            .Select(v => new VariableResponse(v.Id, v.Key, v.Value, v.EnvironmentId, v.ProjectId, v.VariableSetId, v.CreatedAt, v.UpdatedAt))
             .ToListAsync(cancellationToken);
-
-        return variables.Select(v => new VariableResponse(
-            v.Id,
-            v.Key,
-            v.Value,
-            v.EnvironmentId,
-            v.ProjectId,
-            v.VariableSetId,
-            v.CreatedAt,
-            v.UpdatedAt
-        )).ToList();
     }
 }

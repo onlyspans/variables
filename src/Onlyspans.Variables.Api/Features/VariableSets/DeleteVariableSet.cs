@@ -19,9 +19,7 @@ public sealed class DeleteVariableSetHandler(
             .FirstOrDefaultAsync(vs => vs.Id == command.Id, cancellationToken);
 
         if (variableSet is null)
-        {
             throw new InvalidOperationException($"Variable set {command.Id} not found");
-        }
 
         db.VariableSets.Remove(variableSet);
         await db.SaveChangesAsync(cancellationToken);

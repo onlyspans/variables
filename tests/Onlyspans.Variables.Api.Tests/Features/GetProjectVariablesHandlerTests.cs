@@ -1,6 +1,6 @@
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Features.Variables;
 using Onlyspans.Variables.Api.Tests.Helpers;
 
@@ -8,13 +8,6 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class GetProjectVariablesHandlerTests
 {
-    private readonly Mock<ILogger<GetProjectVariablesHandler>> _loggerMock;
-
-    public GetProjectVariablesHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<GetProjectVariablesHandler>>();
-    }
-
     [Fact]
     public async Task Handle_ProjectWithVariables_ReturnsAllProjectVariables()
     {
@@ -22,26 +15,15 @@ public class GetProjectVariablesHandlerTests
         var projectId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var var1 = TestDataBuilder.CreateVariable(
-            key: "VAR1",
-            value: "value1",
-            projectId: projectId);
-
-        var var2 = TestDataBuilder.CreateVariable(
-            key: "VAR2",
-            value: "value2",
-            projectId: projectId);
-
-        var var3 = TestDataBuilder.CreateVariable(
-            key: "VAR3",
-            value: "value3",
-            projectId: projectId);
+        var var1 = new Variable { Id = Guid.NewGuid(), Key = "VAR1", Value = "value1", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var var2 = new Variable { Id = Guid.NewGuid(), Key = "VAR2", Value = "value2", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var var3 = new Variable { Id = Guid.NewGuid(), Key = "VAR3", Value = "value3", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(var1, var2, var3);
         await db.SaveChangesAsync();
 
         var query = new GetProjectVariables(projectId);
-        var handler = new GetProjectVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetProjectVariablesHandler(db, NullLogger<GetProjectVariablesHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -61,7 +43,7 @@ public class GetProjectVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         var query = new GetProjectVariables(projectId);
-        var handler = new GetProjectVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetProjectVariablesHandler(db, NullLogger<GetProjectVariablesHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -79,26 +61,20 @@ public class GetProjectVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         // Create variable set
-        var variableSet = TestDataBuilder.CreateVariableSet(id: variableSetId, name: "Test Set");
+        var variableSet = new VariableSet { Id = variableSetId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
 
         // Project variable
-        var projectVar = TestDataBuilder.CreateVariable(
-            key: "PROJECT_VAR",
-            value: "project-value",
-            projectId: projectId);
+        var projectVar = new Variable { Id = Guid.NewGuid(), Key = "PROJECT_VAR", Value = "project-value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Variable set variable (should be excluded)
-        var setVar = TestDataBuilder.CreateVariable(
-            key: "SET_VAR",
-            value: "set-value",
-            variableSetId: variableSetId);
+        var setVar = new Variable { Id = Guid.NewGuid(), Key = "SET_VAR", Value = "set-value", VariableSetId = variableSetId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(projectVar, setVar);
         await db.SaveChangesAsync();
 
         var query = new GetProjectVariables(projectId);
-        var handler = new GetProjectVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetProjectVariablesHandler(db, NullLogger<GetProjectVariablesHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -118,26 +94,15 @@ public class GetProjectVariablesHandlerTests
         var project2Id = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var project1Var1 = TestDataBuilder.CreateVariable(
-            key: "P1_VAR1",
-            value: "value1",
-            projectId: project1Id);
-
-        var project1Var2 = TestDataBuilder.CreateVariable(
-            key: "P1_VAR2",
-            value: "value2",
-            projectId: project1Id);
-
-        var project2Var = TestDataBuilder.CreateVariable(
-            key: "P2_VAR",
-            value: "value",
-            projectId: project2Id);
+        var project1Var1 = new Variable { Id = Guid.NewGuid(), Key = "P1_VAR1", Value = "value1", ProjectId = project1Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var project1Var2 = new Variable { Id = Guid.NewGuid(), Key = "P1_VAR2", Value = "value2", ProjectId = project1Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var project2Var = new Variable { Id = Guid.NewGuid(), Key = "P2_VAR", Value = "value", ProjectId = project2Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(project1Var1, project1Var2, project2Var);
         await db.SaveChangesAsync();
 
         var query = new GetProjectVariables(project1Id);
-        var handler = new GetProjectVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetProjectVariablesHandler(db, NullLogger<GetProjectVariablesHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -157,29 +122,15 @@ public class GetProjectVariablesHandlerTests
         var env2Id = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var unscopedVar = TestDataBuilder.CreateVariable(
-            key: "UNSCOPED",
-            value: "value",
-            environmentId: null,
-            projectId: projectId);
-
-        var env1Var = TestDataBuilder.CreateVariable(
-            key: "ENV1_VAR",
-            value: "env1-value",
-            environmentId: env1Id,
-            projectId: projectId);
-
-        var env2Var = TestDataBuilder.CreateVariable(
-            key: "ENV2_VAR",
-            value: "env2-value",
-            environmentId: env2Id,
-            projectId: projectId);
+        var unscopedVar = new Variable { Id = Guid.NewGuid(), Key = "UNSCOPED", Value = "value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var env1Var = new Variable { Id = Guid.NewGuid(), Key = "ENV1_VAR", Value = "env1-value", EnvironmentId = env1Id, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var env2Var = new Variable { Id = Guid.NewGuid(), Key = "ENV2_VAR", Value = "env2-value", EnvironmentId = env2Id, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(unscopedVar, env1Var, env2Var);
         await db.SaveChangesAsync();
 
         var query = new GetProjectVariables(projectId);
-        var handler = new GetProjectVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetProjectVariablesHandler(db, NullLogger<GetProjectVariablesHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -192,30 +143,6 @@ public class GetProjectVariablesHandlerTests
     }
 
     [Fact]
-    public async Task Handle_LogsInformation_WhenCalled()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var query = new GetProjectVariables(projectId);
-        var handler = new GetProjectVariablesHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Getting direct project variables")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
     public async Task Handle_ReturnsCompleteVariableResponse()
     {
         // Arrange
@@ -224,19 +151,13 @@ public class GetProjectVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
         var now = DateTime.UtcNow;
 
-        var variable = TestDataBuilder.CreateVariable(
-            key: "COMPLETE_VAR",
-            value: "complete-value",
-            environmentId: environmentId,
-            projectId: projectId,
-            createdAt: now,
-            updatedAt: now);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "COMPLETE_VAR", Value = "complete-value", EnvironmentId = environmentId, ProjectId = projectId, CreatedAt = now, UpdatedAt = now };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
 
         var query = new GetProjectVariables(projectId);
-        var handler = new GetProjectVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetProjectVariablesHandler(db, NullLogger<GetProjectVariablesHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);

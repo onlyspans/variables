@@ -16,28 +16,21 @@ public sealed class UpdateVariableHandler(
     {
         logger.LogInformation("Updating variable {VariableId}", command.Id);
 
-        var variable = await db.Variables
+        var variable = await db
+            .Variables
             .FirstOrDefaultAsync(v => v.Id == command.Id, cancellationToken);
 
         if (variable is null)
-        {
             throw new InvalidOperationException($"Variable {command.Id} not found");
-        }
 
         if (command.Request.Key is not null)
-        {
             variable.Key = command.Request.Key;
-        }
 
         if (command.Request.Value is not null)
-        {
             variable.Value = command.Request.Value;
-        }
 
         if (command.Request.EnvironmentId.HasValue)
-        {
             variable.EnvironmentId = command.Request.EnvironmentId;
-        }
 
         variable.UpdatedAt = DateTime.UtcNow;
 

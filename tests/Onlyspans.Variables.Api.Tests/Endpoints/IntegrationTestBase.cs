@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Moq;
+using NSubstitute;
 using Onlyspans.Variables.Api.Abstractions.Services;
 using Onlyspans.Variables.Api.Data.Contexts;
 using Projects.V1;
@@ -27,7 +27,7 @@ public class IntegrationTestBase : IAsyncLifetime, IDisposable
     protected HttpClient Client { get; private set; } = null!;
     protected ApplicationDbContext DbContext { get; private set; } = null!;
 
-    protected Mock<IProjectsClient> MockProjectsClient { get; } = new();
+    protected IProjectsClient ProjectsClient { get; } = Substitute.For<IProjectsClient>();
 
     public async Task InitializeAsync()
     {
@@ -43,9 +43,9 @@ public class IntegrationTestBase : IAsyncLifetime, IDisposable
         await _postgresContainer.StartAsync();
 
         // Setup mock clients to return true by default
-        MockProjectsClient
-            .Setup(x => x.ProjectExistsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        ProjectsClient
+            .ProjectExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(true));
 
         // Create WebApplicationFactory
         var connectionString = _postgresContainer.GetConnectionString();
@@ -83,7 +83,7 @@ public class IntegrationTestBase : IAsyncLifetime, IDisposable
 
                     // Replace IProjectsClient with mock to prevent real gRPC calls
                     services.RemoveAll<IProjectsClient>();
-                    services.AddSingleton(MockProjectsClient.Object);
+                    services.AddSingleton(ProjectsClient);
                     // Remove the generated gRPC client to prevent connection attempts to localhost:4001
                     services.RemoveAll<ProjectsService.ProjectsServiceClient>();
                 });
@@ -94,7 +94,7 @@ public class IntegrationTestBase : IAsyncLifetime, IDisposable
         // Get DbContext and ensure database is created
         _scope = _factory.Services.CreateScope();
         DbContext = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await DbContext.Database.EnsureCreatedAsync();
+        await DbContext.Database.MigrateAsync();
     }
 
     public void Dispose()
@@ -142,10 +142,8 @@ public class IntegrationTestBase : IAsyncLifetime, IDisposable
     /// </summary>
     protected async Task CleanDatabaseAsync()
     {
-        // Delete in order to respect foreign key constraints
-        await DbContext.Database.ExecuteSqlRawAsync("DELETE FROM project_variable_set_links");
-        await DbContext.Database.ExecuteSqlRawAsync("DELETE FROM variables");
-        await DbContext.Database.ExecuteSqlRawAsync("DELETE FROM variable_sets");
+        await DbContext.Database.EnsureDeletedAsync();
+        await DbContext.Database.MigrateAsync();
     }
 
     /// <summary>

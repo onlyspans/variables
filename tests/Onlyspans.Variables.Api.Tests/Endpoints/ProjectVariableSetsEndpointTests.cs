@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Data.Records;
-using Onlyspans.Variables.Api.Tests.Helpers;
 
 namespace Onlyspans.Variables.Api.Tests.Endpoints;
 
@@ -37,13 +37,13 @@ public class ProjectVariableSetsEndpointTests : IntegrationTestBase
         await SeedDatabaseAsync(db =>
         {
             // Create variable sets
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: set1Id, name: "Development Set"));
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: set2Id, name: "Production Set"));
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: set3Id, name: "Unlinked Set"));
+            db.VariableSets.Add(new VariableSet { Id = set1Id, Name = "Development Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.VariableSets.Add(new VariableSet { Id = set2Id, Name = "Production Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.VariableSets.Add(new VariableSet { Id = set3Id, Name = "Unlinked Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
 
             // Link only set1 and set2 to the project
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(projectId, set1Id));
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(projectId, set2Id));
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set1Id, LinkedAt = DateTime.UtcNow });
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set2Id, LinkedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -78,7 +78,7 @@ public class ProjectVariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set"));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -117,8 +117,8 @@ public class ProjectVariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId));
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(projectId, setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = setId, LinkedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -168,8 +168,8 @@ public class ProjectVariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId));
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(projectId, setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = setId, LinkedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -192,7 +192,7 @@ public class ProjectVariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -239,9 +239,9 @@ public class ProjectVariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: set1Id, name: "Set 1"));
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: set2Id, name: "Set 2"));
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: set3Id, name: "Set 3"));
+            db.VariableSets.Add(new VariableSet { Id = set1Id, Name = "Set 1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.VariableSets.Add(new VariableSet { Id = set2Id, Name = "Set 2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.VariableSets.Add(new VariableSet { Id = set3Id, Name = "Set 3", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         // Act - Link multiple sets
@@ -270,9 +270,9 @@ public class ProjectVariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId));
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(project1Id, setId));
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(project2Id, setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = project1Id, VariableSetId = setId, LinkedAt = DateTime.UtcNow });
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = project2Id, VariableSetId = setId, LinkedAt = DateTime.UtcNow });
         });
 
         // Act - Unlink from project1
@@ -300,10 +300,10 @@ public class ProjectVariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: set1Id, name: "Project 1 Set"));
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: set2Id, name: "Project 2 Set"));
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(project1Id, set1Id));
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(project2Id, set2Id));
+            db.VariableSets.Add(new VariableSet { Id = set1Id, Name = "Project 1 Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.VariableSets.Add(new VariableSet { Id = set2Id, Name = "Project 2 Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = project1Id, VariableSetId = set1Id, LinkedAt = DateTime.UtcNow });
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = project2Id, VariableSetId = set2Id, LinkedAt = DateTime.UtcNow });
         });
 
         // Act

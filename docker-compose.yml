@@ -34,7 +34,6 @@ services:
       Serilog__MinimumLevel: "Debug"
       # gRPC client URLs (stub for now)
       GrpcClients__ProjectsServiceUrl: "http://projects:8080"
-      GrpcClients__TargetsPlaneServiceUrl: "http://targets-plane:8080"
     ports:
       - "8080:8080"
     depends_on:

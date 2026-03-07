@@ -1,6 +1,6 @@
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Data.Exceptions;
 using Onlyspans.Variables.Api.Features.Variables;
 using Onlyspans.Variables.Api.Tests.Helpers;
@@ -9,13 +9,6 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class GetResolvedVariablesHandlerTests
 {
-    private readonly Mock<ILogger<GetResolvedVariablesHandler>> _loggerMock;
-
-    public GetResolvedVariablesHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<GetResolvedVariablesHandler>>();
-    }
-
     [Fact]
     public async Task Handle_EnvironmentSpecificVariableBeatsUnscoped_ReturnsEnvironmentSpecificVariable()
     {
@@ -26,23 +19,15 @@ public class GetResolvedVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         // Add unscoped project variable
-        var unscopedVar = TestDataBuilder.CreateVariable(
-            key: "API_KEY",
-            value: "unscoped-value",
-            environmentId: null,
-            projectId: projectId);
+        var unscopedVar = new Variable { Id = Guid.NewGuid(), Key = "API_KEY", Value = "unscoped-value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Add environment-specific project variable
-        var scopedVar = TestDataBuilder.CreateVariable(
-            key: "API_KEY",
-            value: "env-specific-value",
-            environmentId: environmentId,
-            projectId: projectId);
+        var scopedVar = new Variable { Id = Guid.NewGuid(), Key = "API_KEY", Value = "env-specific-value", EnvironmentId = environmentId, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(unscopedVar, scopedVar);
         await db.SaveChangesAsync();
 
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetResolvedVariablesHandler(db, NullLogger<GetResolvedVariablesHandler>.Instance);
         var query = new GetResolvedVariables(projectId, environmentId);
 
         // Act
@@ -66,32 +51,24 @@ public class GetResolvedVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         // Create variable set
-        var variableSet = TestDataBuilder.CreateVariableSet(id: variableSetId, name: "Test Set");
+        var variableSet = new VariableSet { Id = variableSetId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
 
         // Add variable set variable
-        var setVar = TestDataBuilder.CreateVariable(
-            key: "DATABASE_URL",
-            value: "set-value",
-            environmentId: environmentId,
-            variableSetId: variableSetId);
+        var setVar = new Variable { Id = Guid.NewGuid(), Key = "DATABASE_URL", Value = "set-value", EnvironmentId = environmentId, VariableSetId = variableSetId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Add project variable with same key and scope
-        var projectVar = TestDataBuilder.CreateVariable(
-            key: "DATABASE_URL",
-            value: "project-value",
-            environmentId: environmentId,
-            projectId: projectId);
+        var projectVar = new Variable { Id = Guid.NewGuid(), Key = "DATABASE_URL", Value = "project-value", EnvironmentId = environmentId, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(setVar, projectVar);
 
         // Link variable set to project
-        var link = TestDataBuilder.CreateLink(projectId, variableSetId);
+        var link = new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = variableSetId, LinkedAt = DateTime.UtcNow };
         db.ProjectVariableSetLinks.Add(link);
 
         await db.SaveChangesAsync();
 
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetResolvedVariablesHandler(db, NullLogger<GetResolvedVariablesHandler>.Instance);
         var query = new GetResolvedVariables(projectId, environmentId);
 
         // Act
@@ -116,33 +93,24 @@ public class GetResolvedVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         // Create two variable sets
-        var set1 = TestDataBuilder.CreateVariableSet(id: set1Id, name: "Set One");
-        var set2 = TestDataBuilder.CreateVariableSet(id: set2Id, name: "Set Two");
+        var set1 = new VariableSet { Id = set1Id, Name = "Set One", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var set2 = new VariableSet { Id = set2Id, Name = "Set Two", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.AddRange(set1, set2);
 
         // Add same variable key to both sets
-        var var1 = TestDataBuilder.CreateVariable(
-            key: "CONFLICT_KEY",
-            value: "value1",
-            environmentId: environmentId,
-            variableSetId: set1Id);
-
-        var var2 = TestDataBuilder.CreateVariable(
-            key: "CONFLICT_KEY",
-            value: "value2",
-            environmentId: environmentId,
-            variableSetId: set2Id);
+        var var1 = new Variable { Id = Guid.NewGuid(), Key = "CONFLICT_KEY", Value = "value1", EnvironmentId = environmentId, VariableSetId = set1Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var var2 = new Variable { Id = Guid.NewGuid(), Key = "CONFLICT_KEY", Value = "value2", EnvironmentId = environmentId, VariableSetId = set2Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(var1, var2);
 
         // Link both sets to project
-        var link1 = TestDataBuilder.CreateLink(projectId, set1Id);
-        var link2 = TestDataBuilder.CreateLink(projectId, set2Id);
+        var link1 = new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set1Id, LinkedAt = DateTime.UtcNow };
+        var link2 = new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set2Id, LinkedAt = DateTime.UtcNow };
         db.ProjectVariableSetLinks.AddRange(link1, link2);
 
         await db.SaveChangesAsync();
 
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetResolvedVariablesHandler(db, NullLogger<GetResolvedVariablesHandler>.Instance);
         var query = new GetResolvedVariables(projectId, environmentId);
 
         // Act
@@ -164,31 +132,24 @@ public class GetResolvedVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         // Create two variable sets with descriptive names
-        var set1 = TestDataBuilder.CreateVariableSet(id: set1Id, name: "Production Set");
-        var set2 = TestDataBuilder.CreateVariableSet(id: set2Id, name: "Staging Set");
+        var set1 = new VariableSet { Id = set1Id, Name = "Production Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var set2 = new VariableSet { Id = set2Id, Name = "Staging Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.AddRange(set1, set2);
 
         // Add conflicting variables
-        var var1 = TestDataBuilder.CreateVariable(
-            key: "API_ENDPOINT",
-            value: "prod-endpoint",
-            variableSetId: set1Id);
-
-        var var2 = TestDataBuilder.CreateVariable(
-            key: "API_ENDPOINT",
-            value: "staging-endpoint",
-            variableSetId: set2Id);
+        var var1 = new Variable { Id = Guid.NewGuid(), Key = "API_ENDPOINT", Value = "prod-endpoint", VariableSetId = set1Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var var2 = new Variable { Id = Guid.NewGuid(), Key = "API_ENDPOINT", Value = "staging-endpoint", VariableSetId = set2Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(var1, var2);
 
         // Link both sets
         db.ProjectVariableSetLinks.AddRange(
-            TestDataBuilder.CreateLink(projectId, set1Id),
-            TestDataBuilder.CreateLink(projectId, set2Id));
+            new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set1Id, LinkedAt = DateTime.UtcNow },
+            new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set2Id, LinkedAt = DateTime.UtcNow });
 
         await db.SaveChangesAsync();
 
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetResolvedVariablesHandler(db, NullLogger<GetResolvedVariablesHandler>.Instance);
         var query = new GetResolvedVariables(projectId, null);
 
         // Act & Assert
@@ -212,7 +173,7 @@ public class GetResolvedVariablesHandlerTests
 
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetResolvedVariablesHandler(db, NullLogger<GetResolvedVariablesHandler>.Instance);
         var query = new GetResolvedVariables(projectId, environmentId);
 
         // Act
@@ -233,35 +194,17 @@ public class GetResolvedVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         // Add unscoped variables
-        var unscopedVar1 = TestDataBuilder.CreateVariable(
-            key: "KEY1",
-            value: "value1",
-            environmentId: null,
-            projectId: projectId);
-
-        var unscopedVar2 = TestDataBuilder.CreateVariable(
-            key: "KEY2",
-            value: "value2",
-            environmentId: null,
-            projectId: projectId);
+        var unscopedVar1 = new Variable { Id = Guid.NewGuid(), Key = "KEY1", Value = "value1", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var unscopedVar2 = new Variable { Id = Guid.NewGuid(), Key = "KEY2", Value = "value2", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Add environment-scoped variables (should not be included)
-        var scopedVar1 = TestDataBuilder.CreateVariable(
-            key: "ENV_KEY1",
-            value: "env-value1",
-            environmentId: env1Id,
-            projectId: projectId);
-
-        var scopedVar2 = TestDataBuilder.CreateVariable(
-            key: "ENV_KEY2",
-            value: "env-value2",
-            environmentId: env2Id,
-            projectId: projectId);
+        var scopedVar1 = new Variable { Id = Guid.NewGuid(), Key = "ENV_KEY1", Value = "env-value1", EnvironmentId = env1Id, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var scopedVar2 = new Variable { Id = Guid.NewGuid(), Key = "ENV_KEY2", Value = "env-value2", EnvironmentId = env2Id, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(unscopedVar1, unscopedVar2, scopedVar1, scopedVar2);
         await db.SaveChangesAsync();
 
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetResolvedVariablesHandler(db, NullLogger<GetResolvedVariablesHandler>.Instance);
         var query = new GetResolvedVariables(projectId, null);
 
         // Act
@@ -286,36 +229,19 @@ public class GetResolvedVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         // Variable with both unscoped and target environment version
-        var unscopedVar = TestDataBuilder.CreateVariable(
-            key: "SHARED_KEY",
-            value: "unscoped-value",
-            environmentId: null,
-            projectId: projectId);
-
-        var targetEnvVar = TestDataBuilder.CreateVariable(
-            key: "SHARED_KEY",
-            value: "target-env-value",
-            environmentId: targetEnvId,
-            projectId: projectId);
+        var unscopedVar = new Variable { Id = Guid.NewGuid(), Key = "SHARED_KEY", Value = "unscoped-value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var targetEnvVar = new Variable { Id = Guid.NewGuid(), Key = "SHARED_KEY", Value = "target-env-value", EnvironmentId = targetEnvId, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Variable only in other environment (should be excluded)
-        var otherEnvVar = TestDataBuilder.CreateVariable(
-            key: "OTHER_ENV_KEY",
-            value: "other-value",
-            environmentId: otherEnvId,
-            projectId: projectId);
+        var otherEnvVar = new Variable { Id = Guid.NewGuid(), Key = "OTHER_ENV_KEY", Value = "other-value", EnvironmentId = otherEnvId, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Unscoped variable with no environment-specific version
-        var plainUnscopedVar = TestDataBuilder.CreateVariable(
-            key: "PLAIN_KEY",
-            value: "plain-value",
-            environmentId: null,
-            projectId: projectId);
+        var plainUnscopedVar = new Variable { Id = Guid.NewGuid(), Key = "PLAIN_KEY", Value = "plain-value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(unscopedVar, targetEnvVar, otherEnvVar, plainUnscopedVar);
         await db.SaveChangesAsync();
 
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetResolvedVariablesHandler(db, NullLogger<GetResolvedVariablesHandler>.Instance);
         var query = new GetResolvedVariables(projectId, targetEnvId);
 
         // Act
@@ -340,48 +266,32 @@ public class GetResolvedVariablesHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         // Create two variable sets
-        var set1 = TestDataBuilder.CreateVariableSet(id: set1Id, name: "Common Set");
-        var set2 = TestDataBuilder.CreateVariableSet(id: set2Id, name: "Database Set");
+        var set1 = new VariableSet { Id = set1Id, Name = "Common Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var set2 = new VariableSet { Id = set2Id, Name = "Database Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.AddRange(set1, set2);
 
         // Set 1: Unscoped variable
-        var set1Var = TestDataBuilder.CreateVariable(
-            key: "COMMON_VAR",
-            value: "common-value",
-            environmentId: null,
-            variableSetId: set1Id);
+        var set1Var = new Variable { Id = Guid.NewGuid(), Key = "COMMON_VAR", Value = "common-value", VariableSetId = set1Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Set 2: Environment-specific variable
-        var set2Var = TestDataBuilder.CreateVariable(
-            key: "DB_HOST",
-            value: "set2-db-host",
-            environmentId: prodEnvId,
-            variableSetId: set2Id);
+        var set2Var = new Variable { Id = Guid.NewGuid(), Key = "DB_HOST", Value = "set2-db-host", EnvironmentId = prodEnvId, VariableSetId = set2Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Project: Override one set variable
-        var projectOverride = TestDataBuilder.CreateVariable(
-            key: "DB_HOST",
-            value: "project-db-host",
-            environmentId: prodEnvId,
-            projectId: projectId);
+        var projectOverride = new Variable { Id = Guid.NewGuid(), Key = "DB_HOST", Value = "project-db-host", EnvironmentId = prodEnvId, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         // Project: Additional unscoped variable
-        var projectVar = TestDataBuilder.CreateVariable(
-            key: "PROJECT_SPECIFIC",
-            value: "project-value",
-            environmentId: null,
-            projectId: projectId);
+        var projectVar = new Variable { Id = Guid.NewGuid(), Key = "PROJECT_SPECIFIC", Value = "project-value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(set1Var, set2Var, projectOverride, projectVar);
 
         // Link both sets
         db.ProjectVariableSetLinks.AddRange(
-            TestDataBuilder.CreateLink(projectId, set1Id),
-            TestDataBuilder.CreateLink(projectId, set2Id));
+            new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set1Id, LinkedAt = DateTime.UtcNow },
+            new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set2Id, LinkedAt = DateTime.UtcNow });
 
         await db.SaveChangesAsync();
 
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
+        var handler = new GetResolvedVariablesHandler(db, NullLogger<GetResolvedVariablesHandler>.Instance);
         var query = new GetResolvedVariables(projectId, prodEnvId);
 
         // Act
@@ -400,31 +310,5 @@ public class GetResolvedVariablesHandlerTests
 
         // Verify project-specific variable
         result.Should().Contain(v => v.Key == "PROJECT_SPECIFIC" && v.Value == "project-value");
-    }
-
-    [Fact]
-    public async Task Handle_LogsInformation_WhenCalled()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var environmentId = Guid.NewGuid();
-
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var handler = new GetResolvedVariablesHandler(db, _loggerMock.Object);
-        var query = new GetResolvedVariables(projectId, environmentId);
-
-        // Act
-        await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Resolving variables")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 }

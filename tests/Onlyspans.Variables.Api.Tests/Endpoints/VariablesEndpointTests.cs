@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Data.Records;
-using Onlyspans.Variables.Api.Tests.Helpers;
 
 namespace Onlyspans.Variables.Api.Tests.Endpoints;
 
@@ -31,18 +31,10 @@ public class VariablesEndpointTests : IntegrationTestBase
         var projectId = Guid.NewGuid();
         await SeedDatabaseAsync(db =>
         {
-            db.Variables.Add(TestDataBuilder.CreateVariable(
-                key: "API_KEY",
-                value: "secret123",
-                projectId: projectId));
-            db.Variables.Add(TestDataBuilder.CreateVariable(
-                key: "DATABASE_URL",
-                value: "postgres://localhost",
-                projectId: projectId));
+            db.Variables.Add(new Variable { Id = Guid.NewGuid(), Key = "API_KEY", Value = "secret123", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.Variables.Add(new Variable { Id = Guid.NewGuid(), Key = "DATABASE_URL", Value = "postgres://localhost", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
             // Variable for different project should not be returned
-            db.Variables.Add(TestDataBuilder.CreateVariable(
-                key: "OTHER_VAR",
-                projectId: Guid.NewGuid()));
+            db.Variables.Add(new Variable { Id = Guid.NewGuid(), Key = "OTHER_VAR", Value = "other", ProjectId = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -159,11 +151,7 @@ public class VariablesEndpointTests : IntegrationTestBase
     public async Task UpdateVariable_WithValidData_ReturnsOk()
     {
         // Arrange
-        var variable = TestDataBuilder.CreateVariable(
-            key: "OLD_KEY",
-            value: "old_value",
-            projectId: Guid.NewGuid()
-        );
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "OLD_KEY", Value = "old_value", ProjectId = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         await SeedDatabaseAsync(db => db.Variables.Add(variable));
 
         var request = new UpdateVariableRequest(
@@ -194,11 +182,7 @@ public class VariablesEndpointTests : IntegrationTestBase
     public async Task UpdateVariable_PartialUpdate_UpdatesOnlyProvidedFields()
     {
         // Arrange
-        var variable = TestDataBuilder.CreateVariable(
-            key: "ORIGINAL_KEY",
-            value: "original_value",
-            projectId: Guid.NewGuid()
-        );
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "ORIGINAL_KEY", Value = "original_value", ProjectId = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         await SeedDatabaseAsync(db => db.Variables.Add(variable));
 
         var request = new UpdateVariableRequest(
@@ -253,7 +237,7 @@ public class VariablesEndpointTests : IntegrationTestBase
     public async Task UpdateVariable_WithEmptyKey_ReturnsBadRequest()
     {
         // Arrange
-        var variable = TestDataBuilder.CreateVariable(projectId: Guid.NewGuid());
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "TEST_KEY", Value = "TEST_VALUE", ProjectId = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         await SeedDatabaseAsync(db => db.Variables.Add(variable));
 
         var request = new UpdateVariableRequest(
@@ -271,7 +255,7 @@ public class VariablesEndpointTests : IntegrationTestBase
     public async Task DeleteVariable_WithExistingId_ReturnsNoContent()
     {
         // Arrange
-        var variable = TestDataBuilder.CreateVariable(projectId: Guid.NewGuid());
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "TEST_KEY", Value = "TEST_VALUE", ProjectId = Guid.NewGuid(), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         await SeedDatabaseAsync(db => db.Variables.Add(variable));
 
         // Act
@@ -317,7 +301,7 @@ public class VariablesEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: variableSetId, name: "Test Set"));
+            db.VariableSets.Add(new VariableSet { Id = variableSetId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         var request = new CreateVariableRequest(

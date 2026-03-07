@@ -15,13 +15,12 @@ public sealed class DeleteVariableHandler(
     {
         logger.LogInformation("Deleting variable {VariableId}", command.Id);
 
-        var variable = await db.Variables
+        var variable = await db
+            .Variables
             .FirstOrDefaultAsync(v => v.Id == command.Id, cancellationToken);
 
         if (variable is null)
-        {
             throw new InvalidOperationException($"Variable {command.Id} not found");
-        }
 
         db.Variables.Remove(variable);
         await db.SaveChangesAsync(cancellationToken);

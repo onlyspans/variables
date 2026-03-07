@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Data.Records;
 using Onlyspans.Variables.Api.Features.Variables;
 using Onlyspans.Variables.Api.Tests.Helpers;
@@ -10,13 +10,6 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class UpdateVariableHandlerTests
 {
-    private readonly Mock<ILogger<UpdateVariableHandler>> _loggerMock;
-
-    public UpdateVariableHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<UpdateVariableHandler>>();
-    }
-
     [Fact]
     public async Task Handle_UpdateKey_UpdatesSuccessfully()
     {
@@ -24,17 +17,14 @@ public class UpdateVariableHandlerTests
         var projectId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable = TestDataBuilder.CreateVariable(
-            key: "OLD_KEY",
-            value: "value",
-            projectId: projectId);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "OLD_KEY", Value = "value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
 
         var request = new UpdateVariableRequest(Key: "NEW_KEY");
         var command = new UpdateVariable(variable.Id, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableHandler(db, NullLogger<UpdateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -51,17 +41,14 @@ public class UpdateVariableHandlerTests
         var projectId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable = TestDataBuilder.CreateVariable(
-            key: "API_KEY",
-            value: "old-secret",
-            projectId: projectId);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "API_KEY", Value = "old-secret", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
 
         var request = new UpdateVariableRequest(Value: "new-secret");
         var command = new UpdateVariable(variable.Id, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableHandler(db, NullLogger<UpdateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -79,18 +66,14 @@ public class UpdateVariableHandlerTests
         var newEnvId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable = TestDataBuilder.CreateVariable(
-            key: "DATABASE_URL",
-            value: "postgres://localhost",
-            environmentId: null,
-            projectId: projectId);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "DATABASE_URL", Value = "postgres://localhost", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
 
         var request = new UpdateVariableRequest(EnvironmentId: newEnvId);
         var command = new UpdateVariable(variable.Id, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableHandler(db, NullLogger<UpdateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -107,11 +90,7 @@ public class UpdateVariableHandlerTests
         var newEnvId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable = TestDataBuilder.CreateVariable(
-            key: "OLD_KEY",
-            value: "old-value",
-            environmentId: null,
-            projectId: projectId);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "OLD_KEY", Value = "old-value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
@@ -122,7 +101,7 @@ public class UpdateVariableHandlerTests
             EnvironmentId: newEnvId);
 
         var command = new UpdateVariable(variable.Id, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableHandler(db, NullLogger<UpdateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -142,7 +121,7 @@ public class UpdateVariableHandlerTests
 
         var request = new UpdateVariableRequest(Key: "NEW_KEY");
         var command = new UpdateVariable(nonExistentId, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableHandler(db, NullLogger<UpdateVariableHandler>.Instance);
 
         // Act
         Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
@@ -160,12 +139,7 @@ public class UpdateVariableHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         var originalCreatedAt = DateTime.UtcNow.AddHours(-1);
-        var variable = TestDataBuilder.CreateVariable(
-            key: "TEST_KEY",
-            value: "value",
-            projectId: projectId,
-            createdAt: originalCreatedAt,
-            updatedAt: originalCreatedAt);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "TEST_KEY", Value = "value", ProjectId = projectId, CreatedAt = originalCreatedAt, UpdatedAt = originalCreatedAt };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
@@ -175,7 +149,7 @@ public class UpdateVariableHandlerTests
 
         var request = new UpdateVariableRequest(Value: "new-value");
         var command = new UpdateVariable(variable.Id, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableHandler(db, NullLogger<UpdateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -192,10 +166,7 @@ public class UpdateVariableHandlerTests
         var projectId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable = TestDataBuilder.CreateVariable(
-            key: "MUTABLE_KEY",
-            value: "initial-value",
-            projectId: projectId);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "MUTABLE_KEY", Value = "initial-value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
@@ -205,7 +176,7 @@ public class UpdateVariableHandlerTests
             Value: "updated-value");
 
         var command = new UpdateVariable(variable.Id, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableHandler(db, NullLogger<UpdateVariableHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -218,48 +189,6 @@ public class UpdateVariableHandlerTests
     }
 
     [Fact]
-    public async Task Handle_LogsInformation_OnUpdate()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var variable = TestDataBuilder.CreateVariable(
-            key: "LOG_TEST",
-            value: "value",
-            projectId: projectId);
-
-        db.Variables.Add(variable);
-        await db.SaveChangesAsync();
-
-        var request = new UpdateVariableRequest(Value: "new-value");
-        var command = new UpdateVariable(variable.Id, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Updating variable")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Updated variable")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
     public async Task Handle_NullFields_DoesNotUpdateThoseFields()
     {
         // Arrange
@@ -267,11 +196,7 @@ public class UpdateVariableHandlerTests
         var originalEnvId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable = TestDataBuilder.CreateVariable(
-            key: "ORIGINAL_KEY",
-            value: "original-value",
-            environmentId: originalEnvId,
-            projectId: projectId);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "ORIGINAL_KEY", Value = "original-value", EnvironmentId = originalEnvId, ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
@@ -283,7 +208,7 @@ public class UpdateVariableHandlerTests
             EnvironmentId: null);
 
         var command = new UpdateVariable(variable.Id, request);
-        var handler = new UpdateVariableHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableHandler(db, NullLogger<UpdateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);

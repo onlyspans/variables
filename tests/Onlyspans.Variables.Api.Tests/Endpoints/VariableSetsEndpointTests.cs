@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Data.Records;
-using Onlyspans.Variables.Api.Tests.Helpers;
 
 namespace Onlyspans.Variables.Api.Tests.Endpoints;
 
@@ -27,9 +27,9 @@ public class VariableSetsEndpointTests : IntegrationTestBase
         // Arrange
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(name: "Development Set"));
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(name: "Production Set"));
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(name: "Staging Set"));
+            db.VariableSets.Add(new VariableSet { Id = Guid.NewGuid(), Name = "Development Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.VariableSets.Add(new VariableSet { Id = Guid.NewGuid(), Name = "Production Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.VariableSets.Add(new VariableSet { Id = Guid.NewGuid(), Name = "Staging Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -55,20 +55,9 @@ public class VariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(
-                id: setId,
-                name: "Test Set",
-                description: "A test variable set"));
-            db.Variables.Add(TestDataBuilder.CreateVariable(
-                id: variableId1,
-                key: "VAR1",
-                value: "value1",
-                variableSetId: setId));
-            db.Variables.Add(TestDataBuilder.CreateVariable(
-                id: variableId2,
-                key: "VAR2",
-                value: "value2",
-                variableSetId: setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", Description = "A test variable set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.Variables.Add(new Variable { Id = variableId1, Key = "VAR1", Value = "value1", VariableSetId = setId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.Variables.Add(new Variable { Id = variableId2, Key = "VAR2", Value = "value2", VariableSetId = setId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -182,10 +171,7 @@ public class VariableSetsEndpointTests : IntegrationTestBase
         var setId = Guid.NewGuid();
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(
-                id: setId,
-                name: "Old Name",
-                description: "Old Description"));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Old Name", Description = "Old Description", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         var request = new UpdateVariableSetRequest(
@@ -217,10 +203,7 @@ public class VariableSetsEndpointTests : IntegrationTestBase
         var setId = Guid.NewGuid();
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(
-                id: setId,
-                name: "Original Name",
-                description: "Original Description"));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Original Name", Description = "Original Description", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         var request = new UpdateVariableSetRequest(
@@ -276,7 +259,7 @@ public class VariableSetsEndpointTests : IntegrationTestBase
         var setId = Guid.NewGuid();
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         var request = new UpdateVariableSetRequest(
@@ -297,7 +280,7 @@ public class VariableSetsEndpointTests : IntegrationTestBase
         var setId = Guid.NewGuid();
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -343,9 +326,8 @@ public class VariableSetsEndpointTests : IntegrationTestBase
 
         await SeedDatabaseAsync(db =>
         {
-            var set = TestDataBuilder.CreateVariableSet(id: setId);
-            db.VariableSets.Add(set);
-            db.ProjectVariableSetLinks.Add(TestDataBuilder.CreateLink(projectId, setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+            db.ProjectVariableSetLinks.Add(new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = setId, LinkedAt = DateTime.UtcNow });
         });
 
         // Act
@@ -366,7 +348,7 @@ public class VariableSetsEndpointTests : IntegrationTestBase
         var setId = Guid.NewGuid();
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set"));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         var request = new CreateVariableRequest(
@@ -431,7 +413,7 @@ public class VariableSetsEndpointTests : IntegrationTestBase
         var setId = Guid.NewGuid();
         await SeedDatabaseAsync(db =>
         {
-            db.VariableSets.Add(TestDataBuilder.CreateVariableSet(id: setId));
+            db.VariableSets.Add(new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
         });
 
         var request = new CreateVariableRequest(

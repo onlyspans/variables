@@ -19,7 +19,6 @@ public sealed class CreateVariableSetHandler(
         var now = DateTime.UtcNow;
         var variableSet = new VariableSet
         {
-            Id = Guid.NewGuid(),
             Name = command.Request.Name,
             Description = command.Request.Description,
             CreatedAt = now,

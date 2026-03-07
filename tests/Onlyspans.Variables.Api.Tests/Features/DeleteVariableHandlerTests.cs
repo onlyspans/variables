@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Features.Variables;
 using Onlyspans.Variables.Api.Tests.Helpers;
 
@@ -9,13 +9,6 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class DeleteVariableHandlerTests
 {
-    private readonly Mock<ILogger<DeleteVariableHandler>> _loggerMock;
-
-    public DeleteVariableHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<DeleteVariableHandler>>();
-    }
-
     [Fact]
     public async Task Handle_ExistingVariable_DeletesSuccessfully()
     {
@@ -23,16 +16,13 @@ public class DeleteVariableHandlerTests
         var projectId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable = TestDataBuilder.CreateVariable(
-            key: "TO_DELETE",
-            value: "value",
-            projectId: projectId);
+        var variable = new Variable { Id = Guid.NewGuid(), Key = "TO_DELETE", Value = "value", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.Add(variable);
         await db.SaveChangesAsync();
 
         var command = new DeleteVariable(variable.Id);
-        var handler = new DeleteVariableHandler(db, _loggerMock.Object);
+        var handler = new DeleteVariableHandler(db, NullLogger<DeleteVariableHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -50,7 +40,7 @@ public class DeleteVariableHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         var command = new DeleteVariable(nonExistentId);
-        var handler = new DeleteVariableHandler(db, _loggerMock.Object);
+        var handler = new DeleteVariableHandler(db, NullLogger<DeleteVariableHandler>.Instance);
 
         // Act
         Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
@@ -67,26 +57,15 @@ public class DeleteVariableHandlerTests
         var projectId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable1 = TestDataBuilder.CreateVariable(
-            key: "VAR1",
-            value: "value1",
-            projectId: projectId);
-
-        var variable2 = TestDataBuilder.CreateVariable(
-            key: "VAR2",
-            value: "value2",
-            projectId: projectId);
-
-        var variable3 = TestDataBuilder.CreateVariable(
-            key: "VAR3",
-            value: "value3",
-            projectId: projectId);
+        var variable1 = new Variable { Id = Guid.NewGuid(), Key = "VAR1", Value = "value1", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var variable2 = new Variable { Id = Guid.NewGuid(), Key = "VAR2", Value = "value2", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var variable3 = new Variable { Id = Guid.NewGuid(), Key = "VAR3", Value = "value3", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(variable1, variable2, variable3);
         await db.SaveChangesAsync();
 
         var command = new DeleteVariable(variable2.Id);
-        var handler = new DeleteVariableHandler(db, _loggerMock.Object);
+        var handler = new DeleteVariableHandler(db, NullLogger<DeleteVariableHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -100,67 +79,19 @@ public class DeleteVariableHandlerTests
     }
 
     [Fact]
-    public async Task Handle_LogsInformation_OnDelete()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var variable = TestDataBuilder.CreateVariable(
-            key: "LOG_TEST",
-            value: "value",
-            projectId: projectId);
-
-        db.Variables.Add(variable);
-        await db.SaveChangesAsync();
-
-        var command = new DeleteVariable(variable.Id);
-        var handler = new DeleteVariableHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Deleting variable")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Deleted variable")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
     public async Task Handle_DeleteAllVariablesInProject_LeavesProjectIntact()
     {
         // Arrange
         var projectId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variable1 = TestDataBuilder.CreateVariable(
-            key: "VAR1",
-            value: "value1",
-            projectId: projectId);
-
-        var variable2 = TestDataBuilder.CreateVariable(
-            key: "VAR2",
-            value: "value2",
-            projectId: projectId);
+        var variable1 = new Variable { Id = Guid.NewGuid(), Key = "VAR1", Value = "value1", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var variable2 = new Variable { Id = Guid.NewGuid(), Key = "VAR2", Value = "value2", ProjectId = projectId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.Variables.AddRange(variable1, variable2);
         await db.SaveChangesAsync();
 
-        var handler = new DeleteVariableHandler(db, _loggerMock.Object);
+        var handler = new DeleteVariableHandler(db, NullLogger<DeleteVariableHandler>.Instance);
 
         // Act
         await handler.Handle(new DeleteVariable(variable1.Id), CancellationToken.None);

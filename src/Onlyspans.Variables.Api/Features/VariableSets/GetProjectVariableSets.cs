@@ -16,17 +16,10 @@ public sealed class GetProjectVariableSetsHandler(
     {
         logger.LogInformation("Getting variable sets linked to project {ProjectId}", query.ProjectId);
 
-        var variableSets = await (from link in db.ProjectVariableSetLinks
-            join vs in db.VariableSets on link.VariableSetId equals vs.Id
-            where link.ProjectId == query.ProjectId
-            select vs).ToListAsync(cancellationToken);
-
-        return variableSets.Select(vs => new VariableSetResponse(
-            vs.Id,
-            vs.Name,
-            vs.Description,
-            vs.CreatedAt,
-            vs.UpdatedAt
-        )).ToList();
+        return await db
+            .ProjectVariableSetLinks
+            .Where(x => x.ProjectId == query.ProjectId)
+            .Select(x => new VariableSetResponse(x.VariableSet.Id, x.VariableSet.Name, x.VariableSet.Description, x.VariableSet.CreatedAt, x.VariableSet.UpdatedAt))
+            .ToListAsync(cancellationToken);
     }
 }

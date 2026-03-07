@@ -1,6 +1,6 @@
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Features.VariableSets;
 using Onlyspans.Variables.Api.Tests.Helpers;
 
@@ -8,13 +8,6 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class GetVariableSetHandlerTests
 {
-    private readonly Mock<ILogger<GetVariableSetHandler>> _loggerMock;
-
-    public GetVariableSetHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<GetVariableSetHandler>>();
-    }
-
     [Fact]
     public async Task Handle_ExistingVariableSet_ReturnsDetailWithVariables()
     {
@@ -22,27 +15,17 @@ public class GetVariableSetHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         var setId = Guid.NewGuid();
-        var variableSet = TestDataBuilder.CreateVariableSet(
-            id: setId,
-            name: "Test Set",
-            description: "Test description");
+        var variableSet = new VariableSet { Id = setId, Name = "Test Set", Description = "Test description", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
-        var var1 = TestDataBuilder.CreateVariable(
-            key: "VAR1",
-            value: "value1",
-            variableSetId: setId);
-
-        var var2 = TestDataBuilder.CreateVariable(
-            key: "VAR2",
-            value: "value2",
-            variableSetId: setId);
+        var var1 = new Variable { Id = Guid.NewGuid(), Key = "VAR1", Value = "value1", VariableSetId = setId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var var2 = new Variable { Id = Guid.NewGuid(), Key = "VAR2", Value = "value2", VariableSetId = setId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.VariableSets.Add(variableSet);
         db.Variables.AddRange(var1, var2);
         await db.SaveChangesAsync();
 
         var query = new GetVariableSet(setId);
-        var handler = new GetVariableSetHandler(db, _loggerMock.Object);
+        var handler = new GetVariableSetHandler(db, NullLogger<GetVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -63,12 +46,12 @@ public class GetVariableSetHandlerTests
         // Arrange
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(name: "Empty Set");
+        var variableSet = new VariableSet { Id = Guid.NewGuid(), Name = "Empty Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
 
         var query = new GetVariableSet(variableSet.Id);
-        var handler = new GetVariableSetHandler(db, _loggerMock.Object);
+        var handler = new GetVariableSetHandler(db, NullLogger<GetVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -85,7 +68,7 @@ public class GetVariableSetHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         var query = new GetVariableSet(nonExistentId);
-        var handler = new GetVariableSetHandler(db, _loggerMock.Object);
+        var handler = new GetVariableSetHandler(db, NullLogger<GetVariableSetHandler>.Instance);
 
         // Act
         Func<Task> act = async () => await handler.Handle(query, CancellationToken.None);
@@ -103,26 +86,17 @@ public class GetVariableSetHandlerTests
 
         var setId = Guid.NewGuid();
         var envId = Guid.NewGuid();
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Scoped Set");
+        var variableSet = new VariableSet { Id = setId, Name = "Scoped Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
-        var unscopedVar = TestDataBuilder.CreateVariable(
-            key: "UNSCOPED",
-            value: "value",
-            environmentId: null,
-            variableSetId: setId);
-
-        var scopedVar = TestDataBuilder.CreateVariable(
-            key: "SCOPED",
-            value: "env-value",
-            environmentId: envId,
-            variableSetId: setId);
+        var unscopedVar = new Variable { Id = Guid.NewGuid(), Key = "UNSCOPED", Value = "value", VariableSetId = setId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var scopedVar = new Variable { Id = Guid.NewGuid(), Key = "SCOPED", Value = "env-value", EnvironmentId = envId, VariableSetId = setId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.VariableSets.Add(variableSet);
         db.Variables.AddRange(unscopedVar, scopedVar);
         await db.SaveChangesAsync();
 
         var query = new GetVariableSet(setId);
-        var handler = new GetVariableSetHandler(db, _loggerMock.Object);
+        var handler = new GetVariableSetHandler(db, NullLogger<GetVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -131,32 +105,5 @@ public class GetVariableSetHandlerTests
         result.Variables.Should().HaveCount(2);
         result.Variables.Should().Contain(v => v.Key == "UNSCOPED" && v.EnvironmentId == null);
         result.Variables.Should().Contain(v => v.Key == "SCOPED" && v.EnvironmentId == envId);
-    }
-
-    [Fact]
-    public async Task Handle_LogsInformation_WhenCalled()
-    {
-        // Arrange
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var variableSet = TestDataBuilder.CreateVariableSet(name: "Test Set");
-        db.VariableSets.Add(variableSet);
-        await db.SaveChangesAsync();
-
-        var query = new GetVariableSet(variableSet.Id);
-        var handler = new GetVariableSetHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Getting variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 }

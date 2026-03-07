@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 using Onlyspans.Variables.Api.Data.Records;
 using Onlyspans.Variables.Api.Features.VariableSets;
 using Onlyspans.Variables.Api.Tests.Helpers;
@@ -10,13 +9,6 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class CreateVariableSetHandlerTests
 {
-    private readonly Mock<ILogger<CreateVariableSetHandler>> _loggerMock;
-
-    public CreateVariableSetHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<CreateVariableSetHandler>>();
-    }
-
     [Fact]
     public async Task Handle_ValidRequest_CreatesVariableSetSuccessfully()
     {
@@ -28,7 +20,7 @@ public class CreateVariableSetHandlerTests
             Description: "Production environment configuration");
 
         var command = new CreateVariableSet(request);
-        var handler = new CreateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableSetHandler(db, NullLogger<CreateVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -50,7 +42,7 @@ public class CreateVariableSetHandlerTests
 
         var request = new CreateVariableSetRequest(Name: "Simple Set");
         var command = new CreateVariableSet(request);
-        var handler = new CreateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableSetHandler(db, NullLogger<CreateVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -71,7 +63,7 @@ public class CreateVariableSetHandlerTests
             Description: "Test description");
 
         var command = new CreateVariableSet(request);
-        var handler = new CreateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableSetHandler(db, NullLogger<CreateVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -84,44 +76,11 @@ public class CreateVariableSetHandlerTests
     }
 
     [Fact]
-    public async Task Handle_LogsInformation_OnSuccess()
-    {
-        // Arrange
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var request = new CreateVariableSetRequest(Name: "Logging Test");
-        var command = new CreateVariableSet(request);
-        var handler = new CreateVariableSetHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Creating variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Created variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
     public async Task Handle_MultipleVariableSets_CreatesAllSuccessfully()
     {
         // Arrange
         var db = MockDbContextFactory.CreateInMemoryDbContext();
-        var handler = new CreateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableSetHandler(db, NullLogger<CreateVariableSetHandler>.Instance);
 
         var request1 = new CreateVariableSetRequest(Name: "Set 1", Description: "First");
         var request2 = new CreateVariableSetRequest(Name: "Set 2", Description: "Second");

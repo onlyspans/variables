@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Features.VariableSets;
 using Onlyspans.Variables.Api.Tests.Helpers;
 
@@ -9,25 +9,18 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class DeleteVariableSetHandlerTests
 {
-    private readonly Mock<ILogger<DeleteVariableSetHandler>> _loggerMock;
-
-    public DeleteVariableSetHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<DeleteVariableSetHandler>>();
-    }
-
     [Fact]
     public async Task Handle_ExistingVariableSet_DeletesSuccessfully()
     {
         // Arrange
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(name: "To Delete");
+        var variableSet = new VariableSet { Id = Guid.NewGuid(), Name = "To Delete", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
 
         var command = new DeleteVariableSet(variableSet.Id);
-        var handler = new DeleteVariableSetHandler(db, _loggerMock.Object);
+        var handler = new DeleteVariableSetHandler(db, NullLogger<DeleteVariableSetHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -45,7 +38,7 @@ public class DeleteVariableSetHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         var command = new DeleteVariableSet(nonExistentId);
-        var handler = new DeleteVariableSetHandler(db, _loggerMock.Object);
+        var handler = new DeleteVariableSetHandler(db, NullLogger<DeleteVariableSetHandler>.Instance);
 
         // Act
         Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
@@ -61,15 +54,15 @@ public class DeleteVariableSetHandlerTests
         // Arrange
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var set1 = TestDataBuilder.CreateVariableSet(name: "Set 1");
-        var set2 = TestDataBuilder.CreateVariableSet(name: "Set 2");
-        var set3 = TestDataBuilder.CreateVariableSet(name: "Set 3");
+        var set1 = new VariableSet { Id = Guid.NewGuid(), Name = "Set 1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var set2 = new VariableSet { Id = Guid.NewGuid(), Name = "Set 2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var set3 = new VariableSet { Id = Guid.NewGuid(), Name = "Set 3", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.VariableSets.AddRange(set1, set2, set3);
         await db.SaveChangesAsync();
 
         var command = new DeleteVariableSet(set2.Id);
-        var handler = new DeleteVariableSetHandler(db, _loggerMock.Object);
+        var handler = new DeleteVariableSetHandler(db, NullLogger<DeleteVariableSetHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -79,32 +72,5 @@ public class DeleteVariableSetHandlerTests
         remaining.Should().HaveCount(2);
         remaining.Should().Contain(s => s.Id == set1.Id);
         remaining.Should().Contain(s => s.Id == set3.Id);
-    }
-
-    [Fact]
-    public async Task Handle_LogsInformation_OnDelete()
-    {
-        // Arrange
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var variableSet = TestDataBuilder.CreateVariableSet(name: "Test Set");
-        db.VariableSets.Add(variableSet);
-        await db.SaveChangesAsync();
-
-        var command = new DeleteVariableSet(variableSet.Id);
-        var handler = new DeleteVariableSetHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Deleting variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 }

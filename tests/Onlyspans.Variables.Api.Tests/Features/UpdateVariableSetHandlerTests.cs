@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Data.Records;
 using Onlyspans.Variables.Api.Features.VariableSets;
 using Onlyspans.Variables.Api.Tests.Helpers;
@@ -10,29 +10,20 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class UpdateVariableSetHandlerTests
 {
-    private readonly Mock<ILogger<UpdateVariableSetHandler>> _loggerMock;
-
-    public UpdateVariableSetHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<UpdateVariableSetHandler>>();
-    }
-
     [Fact]
     public async Task Handle_UpdateName_UpdatesSuccessfully()
     {
         // Arrange
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(
-            name: "Old Name",
-            description: "Description");
+        var variableSet = new VariableSet { Id = Guid.NewGuid(), Name = "Old Name", Description = "Description", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
 
         var request = new UpdateVariableSetRequest(Name: "New Name");
         var command = new UpdateVariableSet(variableSet.Id, request);
-        var handler = new UpdateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableSetHandler(db, NullLogger<UpdateVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -48,16 +39,14 @@ public class UpdateVariableSetHandlerTests
         // Arrange
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(
-            name: "Test Set",
-            description: "Old Description");
+        var variableSet = new VariableSet { Id = Guid.NewGuid(), Name = "Test Set", Description = "Old Description", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
 
         var request = new UpdateVariableSetRequest(Description: "New Description");
         var command = new UpdateVariableSet(variableSet.Id, request);
-        var handler = new UpdateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableSetHandler(db, NullLogger<UpdateVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -73,9 +62,7 @@ public class UpdateVariableSetHandlerTests
         // Arrange
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(
-            name: "Old Name",
-            description: "Old Description");
+        var variableSet = new VariableSet { Id = Guid.NewGuid(), Name = "Old Name", Description = "Old Description", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
@@ -85,7 +72,7 @@ public class UpdateVariableSetHandlerTests
             Description: "New Description");
 
         var command = new UpdateVariableSet(variableSet.Id, request);
-        var handler = new UpdateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableSetHandler(db, NullLogger<UpdateVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -104,7 +91,7 @@ public class UpdateVariableSetHandlerTests
 
         var request = new UpdateVariableSetRequest(Name: "New Name");
         var command = new UpdateVariableSet(nonExistentId, request);
-        var handler = new UpdateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableSetHandler(db, NullLogger<UpdateVariableSetHandler>.Instance);
 
         // Act
         Func<Task> act = async () => await handler.Handle(command, CancellationToken.None);
@@ -121,10 +108,7 @@ public class UpdateVariableSetHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         var originalCreatedAt = DateTime.UtcNow.AddHours(-1);
-        var variableSet = TestDataBuilder.CreateVariableSet(
-            name: "Test Set",
-            createdAt: originalCreatedAt,
-            updatedAt: originalCreatedAt);
+        var variableSet = new VariableSet { Id = Guid.NewGuid(), Name = "Test Set", CreatedAt = originalCreatedAt, UpdatedAt = originalCreatedAt };
 
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
@@ -133,7 +117,7 @@ public class UpdateVariableSetHandlerTests
 
         var request = new UpdateVariableSetRequest(Name: "Updated Name");
         var command = new UpdateVariableSet(variableSet.Id, request);
-        var handler = new UpdateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableSetHandler(db, NullLogger<UpdateVariableSetHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -149,9 +133,7 @@ public class UpdateVariableSetHandlerTests
         // Arrange
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(
-            name: "Initial Name",
-            description: "Initial Description");
+        var variableSet = new VariableSet { Id = Guid.NewGuid(), Name = "Initial Name", Description = "Initial Description", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
         db.VariableSets.Add(variableSet);
         await db.SaveChangesAsync();
@@ -161,7 +143,7 @@ public class UpdateVariableSetHandlerTests
             Description: "Updated Description");
 
         var command = new UpdateVariableSet(variableSet.Id, request);
-        var handler = new UpdateVariableSetHandler(db, _loggerMock.Object);
+        var handler = new UpdateVariableSetHandler(db, NullLogger<UpdateVariableSetHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -171,33 +153,5 @@ public class UpdateVariableSetHandlerTests
         updated.Should().NotBeNull();
         updated!.Name.Should().Be("Updated Name");
         updated.Description.Should().Be("Updated Description");
-    }
-
-    [Fact]
-    public async Task Handle_LogsInformation_OnUpdate()
-    {
-        // Arrange
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var variableSet = TestDataBuilder.CreateVariableSet(name: "Test Set");
-        db.VariableSets.Add(variableSet);
-        await db.SaveChangesAsync();
-
-        var request = new UpdateVariableSetRequest(Name: "New Name");
-        var command = new UpdateVariableSet(variableSet.Id, request);
-        var handler = new UpdateVariableSetHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Updating variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 }

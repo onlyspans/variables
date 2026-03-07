@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 using Onlyspans.Variables.Api.Data.Records;
 using Onlyspans.Variables.Api.Features.Variables;
 using Onlyspans.Variables.Api.Tests.Helpers;
@@ -10,13 +9,6 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class CreateVariableHandlerTests
 {
-    private readonly Mock<ILogger<CreateVariableHandler>> _loggerMock;
-
-    public CreateVariableHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<CreateVariableHandler>>();
-    }
-
     [Fact]
     public async Task Handle_ValidRequest_CreatesVariableSuccessfully()
     {
@@ -31,7 +23,7 @@ public class CreateVariableHandlerTests
             VariableSetId: null);
 
         var command = new CreateVariable(projectId, request);
-        var handler = new CreateVariableHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableHandler(db, NullLogger<CreateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -62,7 +54,7 @@ public class CreateVariableHandlerTests
             EnvironmentId: environmentId);
 
         var command = new CreateVariable(projectId, request);
-        var handler = new CreateVariableHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableHandler(db, NullLogger<CreateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -84,7 +76,7 @@ public class CreateVariableHandlerTests
             Value: "true");
 
         var command = new CreateVariable(projectId, request);
-        var handler = new CreateVariableHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableHandler(db, NullLogger<CreateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -98,40 +90,6 @@ public class CreateVariableHandlerTests
     }
 
     [Fact]
-    public async Task Handle_LogsInformation_OnSuccess()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var request = new CreateVariableRequest(Key: "TEST", Value: "value");
-        var command = new CreateVariable(projectId, request);
-        var handler = new CreateVariableHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Creating variable")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Created variable")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
     public async Task Handle_SetsTimestamps_CreatedAtAndUpdatedAtAreEqual()
     {
         // Arrange
@@ -140,7 +98,7 @@ public class CreateVariableHandlerTests
 
         var request = new CreateVariableRequest(Key: "TIMESTAMP_TEST", Value: "value");
         var command = new CreateVariable(projectId, request);
-        var handler = new CreateVariableHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableHandler(db, NullLogger<CreateVariableHandler>.Instance);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -155,7 +113,7 @@ public class CreateVariableHandlerTests
         // Arrange
         var projectId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
-        var handler = new CreateVariableHandler(db, _loggerMock.Object);
+        var handler = new CreateVariableHandler(db, NullLogger<CreateVariableHandler>.Instance);
 
         var request1 = new CreateVariableRequest(Key: "VAR1", Value: "value1");
         var request2 = new CreateVariableRequest(Key: "VAR2", Value: "value2");

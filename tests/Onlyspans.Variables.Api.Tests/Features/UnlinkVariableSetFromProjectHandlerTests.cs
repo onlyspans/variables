@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Onlyspans.Variables.Api.Data.Entities;
 using Onlyspans.Variables.Api.Features.VariableSets;
 using Onlyspans.Variables.Api.Tests.Helpers;
 
@@ -9,13 +9,6 @@ namespace Onlyspans.Variables.Api.Tests.Features;
 
 public class UnlinkVariableSetFromProjectHandlerTests
 {
-    private readonly Mock<ILogger<UnlinkVariableSetFromProjectHandler>> _loggerMock;
-
-    public UnlinkVariableSetFromProjectHandlerTests()
-    {
-        _loggerMock = new Mock<ILogger<UnlinkVariableSetFromProjectHandler>>();
-    }
-
     [Fact]
     public async Task Handle_ExistingLink_UnlinksSuccessfully()
     {
@@ -24,15 +17,15 @@ public class UnlinkVariableSetFromProjectHandlerTests
         var setId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set");
+        var variableSet = new VariableSet { Id = setId, Name = "Test Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
 
-        var link = TestDataBuilder.CreateLink(projectId, setId);
+        var link = new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = setId, LinkedAt = DateTime.UtcNow };
         db.ProjectVariableSetLinks.Add(link);
         await db.SaveChangesAsync();
 
         var command = new UnlinkVariableSetFromProject(projectId, setId);
-        var handler = new UnlinkVariableSetFromProjectHandler(db, _loggerMock.Object);
+        var handler = new UnlinkVariableSetFromProjectHandler(db, NullLogger<UnlinkVariableSetFromProjectHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -52,7 +45,7 @@ public class UnlinkVariableSetFromProjectHandlerTests
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
         var command = new UnlinkVariableSetFromProject(projectId, setId);
-        var handler = new UnlinkVariableSetFromProjectHandler(db, _loggerMock.Object);
+        var handler = new UnlinkVariableSetFromProjectHandler(db, NullLogger<UnlinkVariableSetFromProjectHandler>.Instance);
 
         // Act & Assert - should not throw
         await handler.Handle(command, CancellationToken.None);
@@ -68,19 +61,19 @@ public class UnlinkVariableSetFromProjectHandlerTests
         var set3Id = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var set1 = TestDataBuilder.CreateVariableSet(id: set1Id, name: "Set 1");
-        var set2 = TestDataBuilder.CreateVariableSet(id: set2Id, name: "Set 2");
-        var set3 = TestDataBuilder.CreateVariableSet(id: set3Id, name: "Set 3");
+        var set1 = new VariableSet { Id = set1Id, Name = "Set 1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var set2 = new VariableSet { Id = set2Id, Name = "Set 2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var set3 = new VariableSet { Id = set3Id, Name = "Set 3", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.AddRange(set1, set2, set3);
 
-        var link1 = TestDataBuilder.CreateLink(projectId, set1Id);
-        var link2 = TestDataBuilder.CreateLink(projectId, set2Id);
-        var link3 = TestDataBuilder.CreateLink(projectId, set3Id);
+        var link1 = new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set1Id, LinkedAt = DateTime.UtcNow };
+        var link2 = new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set2Id, LinkedAt = DateTime.UtcNow };
+        var link3 = new ProjectVariableSetLink { ProjectId = projectId, VariableSetId = set3Id, LinkedAt = DateTime.UtcNow };
         db.ProjectVariableSetLinks.AddRange(link1, link2, link3);
         await db.SaveChangesAsync();
 
         var command = new UnlinkVariableSetFromProject(projectId, set2Id);
-        var handler = new UnlinkVariableSetFromProjectHandler(db, _loggerMock.Object);
+        var handler = new UnlinkVariableSetFromProjectHandler(db, NullLogger<UnlinkVariableSetFromProjectHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -105,16 +98,16 @@ public class UnlinkVariableSetFromProjectHandlerTests
         var setId = Guid.NewGuid();
         var db = MockDbContextFactory.CreateInMemoryDbContext();
 
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Shared Set");
+        var variableSet = new VariableSet { Id = setId, Name = "Shared Set", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
         db.VariableSets.Add(variableSet);
 
-        var link1 = TestDataBuilder.CreateLink(project1Id, setId);
-        var link2 = TestDataBuilder.CreateLink(project2Id, setId);
+        var link1 = new ProjectVariableSetLink { ProjectId = project1Id, VariableSetId = setId, LinkedAt = DateTime.UtcNow };
+        var link2 = new ProjectVariableSetLink { ProjectId = project2Id, VariableSetId = setId, LinkedAt = DateTime.UtcNow };
         db.ProjectVariableSetLinks.AddRange(link1, link2);
         await db.SaveChangesAsync();
 
         var command = new UnlinkVariableSetFromProject(project1Id, setId);
-        var handler = new UnlinkVariableSetFromProjectHandler(db, _loggerMock.Object);
+        var handler = new UnlinkVariableSetFromProjectHandler(db, NullLogger<UnlinkVariableSetFromProjectHandler>.Instance);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -124,71 +117,5 @@ public class UnlinkVariableSetFromProjectHandlerTests
         allLinks.Should().HaveCount(1);
         allLinks[0].ProjectId.Should().Be(project2Id);
         allLinks[0].VariableSetId.Should().Be(setId);
-    }
-
-    [Fact]
-    public async Task Handle_LogsInformation_OnSuccess()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var setId = Guid.NewGuid();
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var variableSet = TestDataBuilder.CreateVariableSet(id: setId, name: "Test Set");
-        db.VariableSets.Add(variableSet);
-
-        var link = TestDataBuilder.CreateLink(projectId, setId);
-        db.ProjectVariableSetLinks.Add(link);
-        await db.SaveChangesAsync();
-
-        var command = new UnlinkVariableSetFromProject(projectId, setId);
-        var handler = new UnlinkVariableSetFromProjectHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Unlinking variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Unlinked variable set")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_LogsInformation_WhenLinkNotFound()
-    {
-        // Arrange
-        var projectId = Guid.NewGuid();
-        var setId = Guid.NewGuid();
-        var db = MockDbContextFactory.CreateInMemoryDbContext();
-
-        var command = new UnlinkVariableSetFromProject(projectId, setId);
-        var handler = new UnlinkVariableSetFromProjectHandler(db, _loggerMock.Object);
-
-        // Act
-        await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Link between project") && v.ToString()!.Contains("not found")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 }

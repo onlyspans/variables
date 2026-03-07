@@ -29,7 +29,6 @@ public sealed class AddVariableToSetHandler(
         var now = DateTime.UtcNow;
         var variable = new Variable
         {
-            Id = Guid.NewGuid(),
             Key = command.Request.Key,
             Value = command.Request.Value,
             EnvironmentId = command.Request.EnvironmentId,

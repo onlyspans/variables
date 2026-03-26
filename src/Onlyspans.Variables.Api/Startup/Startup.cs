@@ -1,5 +1,7 @@
 using Onlyspans.Variables.Api.Endpoints;
+using Onlyspans.Variables.Api.Data.Options;
 using Serilog;
+using Strongly.Options;
 
 namespace Onlyspans.Variables.Api.Startup;
 
@@ -14,6 +16,7 @@ public static partial class Startup
 
         builder
             .AddDatabase()
+            .AddStronglyOptions<GrpcClientsOptions>(builder.Configuration)
             .AddGrpcServices()
             .AddFluentValidationServices()
             .AddHealthzServices()

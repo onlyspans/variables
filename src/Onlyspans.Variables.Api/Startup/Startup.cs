@@ -16,11 +16,21 @@ public static partial class Startup
 
         builder
             .AddDatabase()
-            .AddStronglyOptions<GrpcClientsOptions>(builder.Configuration)
             .AddGrpcServices()
             .AddFluentValidationServices()
             .AddHealthzServices()
             .AddMediator();
+
+        builder.Services
+            .AddOptions<GrpcClientsOptions>()
+            .Bind(builder.Configuration.GetSection(GrpcClientsOptions.SectionName))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ProjectsServiceUrl), "GrpcClients:ProjectsServiceUrl is required")
+            .ValidateOnStart();
+
+        builder.Services.AddCors(o => o.AddPolicy("open", p => p
+        .AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod()));
 
         return builder;
     }
@@ -28,6 +38,8 @@ public static partial class Startup
     public static WebApplication Configure(this WebApplication app)
     {
         app.UseExceptionHandler();
+
+        app.UseCors("open");
 
         app.UseHealthz();
         app.UseGrpcServices();

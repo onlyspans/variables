@@ -1,5 +1,6 @@
 using FluentValidation;
 using Mediator;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Onlyspans.Variables.Api.Abstractions.Services;
 using Onlyspans.Variables.Api.Data.Records;
@@ -26,16 +27,16 @@ public static class VariablesEndpoint
         return app;
     }
 
-    private static async Task<IResult> GetProjectVariables(
+    private static async Task<Ok<List<VariableResponse>>> GetProjectVariables(
         [FromRoute] Guid projectId,
         [FromServices] ISender sender,
         CancellationToken ct)
     {
         var result = await sender.Send(new GetProjectVariables(projectId), ct);
-        return Results.Ok(result);
+        return TypedResults.Ok(result);
     }
 
-    private static async Task<IResult> CreateVariable(
+    private static async Task<Results<Created<VariableResponse>, NotFound<string>, ValidationProblem>> CreateVariable(
         [FromRoute] Guid projectId,
         [FromBody] CreateVariableRequest request,
         [FromServices] ISender sender,
@@ -44,19 +45,19 @@ public static class VariablesEndpoint
         CancellationToken ct)
     {
         if (!await projectsClient.ProjectExistsAsync(projectId, ct))
-            return Results.NotFound($"Project {projectId} not found");
+            return TypedResults.NotFound($"Project {projectId} not found");
 
         var validationResult = await validator.ValidateAsync(request, ct);
         if (!validationResult.IsValid)
         {
-            return Results.ValidationProblem(validationResult.ToDictionary());
+            return TypedResults.ValidationProblem(validationResult.ToDictionary());
         }
 
         var result = await sender.Send(new CreateVariable(projectId, request), ct);
-        return Results.Created($"/api/variables/{result.Id}", result);
+        return TypedResults.Created($"/api/variables/{result.Id}", result);
     }
 
-    private static async Task<IResult> UpdateVariable(
+    private static async Task<Results<Ok<VariableResponse>, ValidationProblem>> UpdateVariable(
         [FromRoute] Guid id,
         [FromBody] UpdateVariableRequest request,
         [FromServices] ISender sender,
@@ -66,19 +67,19 @@ public static class VariablesEndpoint
         var validationResult = await validator.ValidateAsync(request, ct);
         if (!validationResult.IsValid)
         {
-            return Results.ValidationProblem(validationResult.ToDictionary());
+            return TypedResults.ValidationProblem(validationResult.ToDictionary());
         }
 
         var result = await sender.Send(new UpdateVariable(id, request), ct);
-        return Results.Ok(result);
+        return TypedResults.Ok(result);
     }
 
-    private static async Task<IResult> DeleteVariable(
+    private static async Task<NoContent> DeleteVariable(
         [FromRoute] Guid id,
         [FromServices] ISender sender,
         CancellationToken ct)
     {
         await sender.Send(new DeleteVariable(id), ct);
-        return Results.NoContent();
+        return TypedResults.NoContent();
     }
 }

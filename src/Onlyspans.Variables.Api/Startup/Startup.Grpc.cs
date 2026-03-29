@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Onlyspans.Variables.Api.Data.Options;
 using Onlyspans.Variables.Api.Services;
 
@@ -11,13 +12,11 @@ public static partial class Startup
         builder.Services.AddGrpc();
 
         if (builder.Environment.IsDevelopment())
-        {
             builder.Services.AddGrpcReflection();
-        }
 
         builder.Services.AddGrpcClient<Projects.V1.ProjectsService.ProjectsServiceClient>((provider, options) =>
         {
-            options.Address = new Uri(provider.GetRequiredService<GrpcClientsOptions>().ProjectsServiceUrl);
+            options.Address = new Uri(provider.GetRequiredService<IOptions<GrpcClientsOptions>>().Value.ProjectsServiceUrl);
         });
 
         builder.Services.AddTransient<Abstractions.Services.IProjectsClient, GrpcProjectsClient>();

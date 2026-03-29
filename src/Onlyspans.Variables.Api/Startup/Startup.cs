@@ -1,4 +1,5 @@
 using Onlyspans.Variables.Api.Endpoints;
+using Scalar.AspNetCore;
 using Serilog;
 
 namespace Onlyspans.Variables.Api.Startup;
@@ -13,11 +14,14 @@ public static partial class Startup
         });
 
         builder
+            .AddOptions()
             .AddDatabase()
             .AddGrpcServices()
             .AddFluentValidationServices()
+            .AddCors()
             .AddHealthzServices()
-            .AddMediator();
+            .AddMediator()
+            .AddOpenApi();
 
         return builder;
     }
@@ -26,12 +30,16 @@ public static partial class Startup
     {
         app.UseExceptionHandler();
 
+        app.UseCors("open");
+
         app.UseHealthz();
         app.UseGrpcServices();
 
         app.MapVariablesEndpoints();
         app.MapVariableSetsEndpoints();
         app.MapProjectVariableSetsEndpoints();
+
+        app.MapScalar();
 
         return app;
     }

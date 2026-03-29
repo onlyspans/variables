@@ -1,5 +1,6 @@
 using FluentValidation;
 using Mediator;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Onlyspans.Variables.Api.Data.Records;
 using Onlyspans.Variables.Api.Features.VariableSets;
@@ -23,24 +24,24 @@ public static class VariableSetsEndpoint
         return app;
     }
 
-    private static async Task<IResult> GetVariableSets(
+    private static async Task<Ok<List<VariableSetResponse>>> GetVariableSets(
         [FromServices] ISender sender,
         CancellationToken ct)
     {
         var result = await sender.Send(new GetVariableSets(), ct);
-        return Results.Ok(result);
+        return TypedResults.Ok(result);
     }
 
-    private static async Task<IResult> GetVariableSet(
+    private static async Task<Ok<VariableSetDetailResponse>> GetVariableSet(
         [FromRoute] Guid id,
         [FromServices] ISender sender,
         CancellationToken ct)
     {
         var result = await sender.Send(new GetVariableSet(id), ct);
-        return Results.Ok(result);
+        return TypedResults.Ok(result);
     }
 
-    private static async Task<IResult> CreateVariableSet(
+    private static async Task<Results<Created<VariableSetResponse>, ValidationProblem>> CreateVariableSet(
         [FromBody] CreateVariableSetRequest request,
         [FromServices] ISender sender,
         [FromServices] IValidator<CreateVariableSetRequest> validator,
@@ -49,14 +50,14 @@ public static class VariableSetsEndpoint
         var validationResult = await validator.ValidateAsync(request, ct);
         if (!validationResult.IsValid)
         {
-            return Results.ValidationProblem(validationResult.ToDictionary());
+            return TypedResults.ValidationProblem(validationResult.ToDictionary());
         }
 
         var result = await sender.Send(new CreateVariableSet(request), ct);
-        return Results.Created($"/api/variable-sets/{result.Id}", result);
+        return TypedResults.Created($"/api/variable-sets/{result.Id}", result);
     }
 
-    private static async Task<IResult> UpdateVariableSet(
+    private static async Task<Results<Ok<VariableSetResponse>, ValidationProblem>> UpdateVariableSet(
         [FromRoute] Guid id,
         [FromBody] UpdateVariableSetRequest request,
         [FromServices] ISender sender,
@@ -66,23 +67,23 @@ public static class VariableSetsEndpoint
         var validationResult = await validator.ValidateAsync(request, ct);
         if (!validationResult.IsValid)
         {
-            return Results.ValidationProblem(validationResult.ToDictionary());
+            return TypedResults.ValidationProblem(validationResult.ToDictionary());
         }
 
         var result = await sender.Send(new UpdateVariableSet(id, request), ct);
-        return Results.Ok(result);
+        return TypedResults.Ok(result);
     }
 
-    private static async Task<IResult> DeleteVariableSet(
+    private static async Task<NoContent> DeleteVariableSet(
         [FromRoute] Guid id,
         [FromServices] ISender sender,
         CancellationToken ct)
     {
         await sender.Send(new DeleteVariableSet(id), ct);
-        return Results.NoContent();
+        return TypedResults.NoContent();
     }
 
-    private static async Task<IResult> AddVariableToSet(
+    private static async Task<Results<Created<VariableResponse>, ValidationProblem>> AddVariableToSet(
         [FromRoute] Guid id,
         [FromBody] CreateVariableRequest request,
         [FromServices] ISender sender,
@@ -92,10 +93,10 @@ public static class VariableSetsEndpoint
         var validationResult = await validator.ValidateAsync(request, ct);
         if (!validationResult.IsValid)
         {
-            return Results.ValidationProblem(validationResult.ToDictionary());
+            return TypedResults.ValidationProblem(validationResult.ToDictionary());
         }
 
         var result = await sender.Send(new AddVariableToSet(id, request), ct);
-        return Results.Created($"/api/variables/{result.Id}", result);
+        return TypedResults.Created($"/api/variables/{result.Id}", result);
     }
 }
